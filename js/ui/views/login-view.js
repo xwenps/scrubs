@@ -99,7 +99,7 @@ export async function renderLoginView(mount) {
     signInButton.classList.add('is-busy');
 
     try {
-      const token = await auth.signIn();
+      const token = await auth.signInInteractive();
       if (!token) return; // the user closed the popup, or a newer request superseded this one
       await initializeSession();
       router.navigate('dashboard', { replace: true });

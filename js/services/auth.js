@@ -65,6 +65,14 @@ if (APP_CONFIG.calendarPicker && APP_CONFIG.calendarAccess !== 'full') {
 
 const BASE_SCOPES = [SCOPES.identity, ...CALENDAR_SCOPES, SCOPES.sheetsRead].join(' ');
 
+/**
+ * The scopes whose absence actually breaks a request. Deliberately excludes the
+ * identity scopes: Google does not reliably echo `openid` back in a token's
+ * scope string, so checking for it would report a complete grant as partial and
+ * re-prompt on every visit.
+ */
+const REQUIRED_API_SCOPES = [...CALENDAR_SCOPES, SCOPES.sheetsRead];
+
 /** The exact scope list this deployment will ask for — surfaced on the sign-in screen. */
 export const REQUESTED_SCOPES = Object.freeze(BASE_SCOPES.split(' '));
 
@@ -214,6 +222,27 @@ export const auth = {
   },
 
   /**
+   * Sign-in for the "Sign in" button.
+   *
+   * GIS re-shows the account chooser *and* the granular-permission checkboxes
+   * on every `requestAccessToken` whose `prompt` is not empty. For a returning
+   * user that means re-ticking the same boxes on every visit — and a box missed
+   * on the way past yields a token short of the scopes the app needs. So try
+   * the no-UI path first and fall back to the full prompt only when there is no
+   * grant to resume, or when the grant that came back is incomplete.
+   */
+  async signInInteractive({ scopes = [] } = {}) {
+    try {
+      const resumed = await auth.signIn({ scopes, prompt: '' });
+      const complete = [...REQUIRED_API_SCOPES, ...scopes].every((scope) => auth.hasScope(scope));
+      if (resumed?.access_token && complete) return resumed;
+    } catch {
+      /* Nothing to resume — ask properly below. */
+    }
+    return auth.signIn({ scopes, prompt: 'select_account' });
+  },
+
+  /**
    * Return a usable token, silently re-issuing an expired one when the Google
    * session is still alive. Throws `AuthError('reauth_required')` when the user
    * must act.
@@ -236,6 +265,15 @@ export const auth = {
   /** Ask for an additional scope (used for writing rules back to the sheet). */
   async requestScope(scope) {
     if (auth.hasScope(scope)) return true;
+    // GIS sends `include_granted_scopes` by default, so a scope granted in an
+    // earlier session comes back with no UI at all. Only a genuinely new grant
+    // should ever reach the consent screen.
+    try {
+      const resumed = await auth.signIn({ scopes: [scope], prompt: '' });
+      if (resumed && auth.hasScope(scope)) return true;
+    } catch {
+      /* Never granted — fall through and ask. */
+    }
     const next = await auth.signIn({ scopes: [scope], prompt: 'consent' });
     return Boolean(next && auth.hasScope(scope));
   },

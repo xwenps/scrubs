@@ -3,6 +3,23 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <!--
+    Content Security Policy.
+
+    Delivered as a meta tag rather than a response header because the primary
+    deployment target is GitHub Pages, which serves static files and offers no
+    way to set headers. `docker/nginx.conf` covers the container deployment.
+
+    The allowances are exactly what Google Identity Services needs: it loads
+    from accounts.google.com, pulls a stylesheet from /gsi/style, opens
+    /o/oauth2/iframe for silent token re-issue, and revokes via
+    oauth2.googleapis.com. The hash below is the inline pre-paint theme script.
+
+    Note: `frame-ancestors` is ignored in a meta tag, so this does NOT restore
+    the X-Frame-Options that nginx sends. Clickjacking cover would need a
+    frame-buster; the app takes no destructive one-click action, so it is out.
+  -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'none'; object-src 'none'; form-action 'none'; script-src 'self' 'sha256-r8ev+oIx0uIJTuKvbaa/kiMflOR2WSPLg4U89UoEC24=' https://accounts.google.com; style-src 'self' 'unsafe-inline' https://accounts.google.com; img-src 'self' data: https://*.googleusercontent.com https://accounts.google.com; font-src 'self'; connect-src 'self' https://www.googleapis.com https://sheets.googleapis.com https://accounts.google.com https://oauth2.googleapis.com; frame-src https://accounts.google.com" />
   <title>Scrubs — shift counter</title>
   <meta name="description" content="Count and visualise your worked and scheduled shifts straight from Google Calendar." />
   <meta name="color-scheme" content="light dark" />

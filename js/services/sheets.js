@@ -12,7 +12,7 @@ export function extractSpreadsheetId(input) {
   if (!value) return '';
   const fromUrl = /\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/.exec(value);
   if (fromUrl) return fromUrl[1];
-  return /^[a-zA-Z0-9-_]{20,}$/.test(value) ? value : value;
+  return looksLikeSpreadsheetId(value) ? value : '';
 }
 
 export function looksLikeSpreadsheetId(value) {
