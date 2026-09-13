@@ -1,0 +1,97 @@
+.btn {
+  --btn-bg: var(--surface);
+  --btn-ink: var(--ink-1);
+  --btn-line: var(--line-strong);
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--s-2);
+  min-height: 38px;
+  padding: 0 var(--s-4);
+  border: 1px solid var(--btn-line);
+  border-radius: var(--r-sm);
+  background: var(--btn-bg);
+  color: var(--btn-ink);
+  font-size: var(--t-md);
+  font-weight: 550;
+  line-height: 1;
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), border-color var(--dur-1) var(--ease),
+              color var(--dur-1) var(--ease), transform var(--dur-1) var(--ease);
+}
+.btn:hover { background: var(--surface-2); }
+.btn:active { transform: translateY(0.5px); }
+.btn[disabled], .btn[aria-disabled="true"] {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.btn svg { width: 16px; height: 16px; flex: none; }
+
+.btn--primary {
+  --btn-bg: var(--accent);
+  --btn-ink: var(--accent-contrast);
+  --btn-line: var(--accent);
+}
+.btn--primary:hover { --btn-bg: var(--accent-hover); --btn-line: var(--accent-hover); }
+
+.btn--ghost {
+  --btn-bg: transparent;
+  --btn-line: transparent;
+  --btn-ink: var(--ink-2);
+}
+.btn--ghost:hover { background: var(--surface-2); color: var(--ink-1); }
+
+.btn--danger {
+  --btn-ink: var(--status-critical);
+  --btn-line: var(--line-strong);
+}
+.btn--danger:hover { background: var(--status-critical-soft); }
+
+.btn--lg { min-height: 46px; padding: 0 var(--s-5); font-size: var(--t-base); }
+.btn--sm { min-height: 30px; padding: 0 var(--s-3); font-size: var(--t-sm); }
+.btn--block { width: 100%; }
+
+.btn--icon {
+  padding: 0;
+  width: 34px;
+  min-height: 34px;
+  border-radius: var(--r-sm);
+}
+.btn--icon.btn--sm { width: 28px; min-height: 28px; }
+
+.btn--google {
+  --btn-bg: var(--surface);
+  --btn-line: var(--line-strong);
+  font-weight: 550;
+}
+.btn--google:hover { background: var(--surface-2); }
+
+.btn.is-busy { position: relative; color: transparent; pointer-events: none; }
+.btn.is-busy::after {
+  content: "";
+  position: absolute;
+  width: 15px; height: 15px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-color: color-mix(in srgb, var(--btn-ink) 30%, transparent);
+  border-top-color: var(--btn-ink);
+  animation: spin 640ms linear infinite;
+}
+
+.link-btn {
+  background: none;
+  border: 0;
+  padding: 0;
+  color: var(--accent-ink);
+  font-size: inherit;
+  font-weight: 550;
+  cursor: pointer;
+}
+.link-btn:hover { text-decoration: underline; }
+
+.btn-group {
+  display: inline-flex;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}

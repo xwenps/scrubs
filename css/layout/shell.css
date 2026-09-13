@@ -1,0 +1,150 @@
+/* App shell: sticky bar, main region, boot state. */
+
+.app {
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+.app-bar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  display: flex;
+  align-items: center;
+  gap: var(--s-4);
+  height: var(--app-bar-h);
+  padding: 0 var(--s-4);
+  padding-inline: max(var(--s-4), env(safe-area-inset-left));
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  border-bottom: 1px solid var(--line);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-1);
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  flex: none;
+}
+.brand:hover { text-decoration: none; }
+
+.brand__mark {
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: var(--accent);
+  display: grid;
+  place-items: center;
+  flex: none;
+}
+.brand__mark svg {
+  width: 16px;
+  height: 16px;
+  fill: none;
+  stroke: var(--accent-contrast);
+  stroke-width: 2.8;
+  stroke-linecap: round;
+}
+.brand__mark circle { fill: var(--accent-contrast); stroke: none; }
+
+.brand__name { font-size: var(--t-base); }
+
+.app-nav {
+  display: flex;
+  align-items: center;
+  gap: var(--s-1);
+  margin-inline-start: var(--s-4);
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.app-nav::-webkit-scrollbar { display: none; }
+
+.app-nav__link {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: var(--t-md);
+  font-weight: 500;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.app-nav__link:hover {
+  background: var(--surface-2);
+  color: var(--ink-1);
+  text-decoration: none;
+}
+.app-nav__link[aria-current="page"] {
+  background: var(--accent-soft);
+  color: var(--accent-ink);
+}
+
+.app-bar__end {
+  margin-inline-start: auto;
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex: none;
+}
+
+.app-main {
+  flex: 1;
+  width: 100%;
+  outline: none;
+}
+
+.view {
+  width: 100%;
+  max-width: var(--content-max);
+  margin-inline: auto;
+  padding: var(--s-7) var(--s-4) var(--s-10);
+  padding-inline: max(var(--s-4), env(safe-area-inset-left)) max(var(--s-4), env(safe-area-inset-right));
+}
+
+.view-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-4);
+  margin-bottom: var(--s-6);
+}
+
+.view-header__text { min-width: 0; }
+.view-header__text p { color: var(--ink-2); font-size: var(--t-md); margin-top: var(--s-1); }
+.view-header__actions { display: flex; gap: var(--s-2); flex-wrap: wrap; }
+
+.app-boot {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: var(--s-3);
+  background: var(--plane);
+  color: var(--ink-3);
+  font-size: var(--t-md);
+  z-index: 60;
+}
+
+.spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid var(--line-strong);
+  border-top-color: var(--accent);
+  animation: spin 700ms linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+@media (max-width: 640px) {
+  .app-bar { gap: var(--s-2); padding-inline: var(--s-3); }
+  .app-nav { margin-inline-start: var(--s-1); }
+  .app-nav__link { padding: var(--s-2); font-size: var(--t-sm); }
+  .brand__name { display: none; }
+  .view { padding-top: var(--s-5); }
+}

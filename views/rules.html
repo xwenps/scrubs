@@ -1,0 +1,55 @@
+<section class="view rules">
+  <header class="view-header">
+    <div class="view-header__text">
+      <h1>Shift counters</h1>
+      <p>Each counter is one number on your dashboard. Build them in plain language — no pattern syntax required.</p>
+    </div>
+    <div class="view-header__actions">
+      <button class="btn" type="button" data-action="add-rule">
+        <svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true">
+          <path d="M8 3.5v9M3.5 8h9" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+        New counter
+      </button>
+      <button class="btn btn--primary" type="button" data-action="save-sheet">Save to sheet</button>
+    </div>
+  </header>
+
+  <div class="rules__intro">
+    <div class="rules__intro-text">
+      <strong>How an event is counted.</strong>
+      Counters are checked from the top down. Reorder them with the arrows on each card —
+      the order matters when an event could match more than one counter.
+    </div>
+    <div class="rules__mode">
+      <span class="toolbar__label">When an event matches several counters</span>
+      <div class="segmented segmented--wrap" role="group" aria-label="Counting mode" data-count-mode>
+        <button class="segmented__option" type="button" data-mode="first" aria-pressed="true">Count it once</button>
+        <button class="segmented__option" type="button" data-mode="all" aria-pressed="false">Count it in each</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="rules__toolbar">
+    <span class="rules__sync" data-sync-state>
+      <span class="rules__sync-dot"></span>
+      <span data-sync-text>In sync with the sheet</span>
+    </span>
+    <div class="toolbar__spacer"></div>
+    <button class="btn btn--sm btn--ghost" type="button" data-action="export">Export JSON</button>
+    <button class="btn btn--sm btn--ghost" type="button" data-action="import">Import JSON</button>
+    <button class="btn btn--sm btn--ghost" type="button" data-action="revert">Revert</button>
+  </div>
+
+  <div class="rule-list" data-rule-list></div>
+
+  <section class="section rules__unmatched" data-unmatched hidden>
+    <div class="section__head">
+      <h2 class="section__title">Not counted yet</h2>
+      <span class="section__note">The most common event titles in this date range that no counter matches.</span>
+    </div>
+    <div class="card card--pad">
+      <div class="unmatched-list" data-unmatched-list></div>
+    </div>
+  </section>
+</section>

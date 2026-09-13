@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Scrubs — component preview</title>
+  <meta name="color-scheme" content="light dark" />
+  <link rel="stylesheet" href="../css/main.css" />
+  <style>
+    .preview-bar {
+      display: flex; gap: var(--s-3); align-items: center; flex-wrap: wrap;
+      padding: var(--s-3) var(--s-4);
+      border-bottom: 1px solid var(--line);
+      background: var(--surface);
+      position: sticky; top: 0; z-index: 50;
+    }
+    .preview-bar__title { font-weight: 650; letter-spacing: -0.02em; }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span class="preview-bar__title">Scrubs preview</span>
+    <span class="chip">Synthetic data · no Google account needed</span>
+    <div class="segmented" role="group" aria-label="View">
+      <button class="segmented__option" type="button" data-view="dashboard" aria-pressed="true">Dashboard</button>
+      <button class="segmented__option" type="button" data-view="rules" aria-pressed="false">Shift counters</button>
+      <button class="segmented__option" type="button" data-view="login" aria-pressed="false">Sign in</button>
+    </div>
+    <div id="theme-slot" style="margin-inline-start:auto"></div>
+  </div>
+
+  <main id="main" tabindex="-1"></main>
+  <div class="toast-stack" id="toast-stack" aria-live="polite"></div>
+
+  <div class="app-boot" id="app-boot">
+    <span class="spinner" aria-hidden="true"></span>
+    <p>Loading the preview…</p>
+  </div>
+
+  <script src="../config/runtime-config.js"></script>
+  <script src="../js/boot-guard.js"></script>
+  <script type="module" src="./preview.js"></script>
+</body>
+</html>

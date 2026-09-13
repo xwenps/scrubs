@@ -1,0 +1,73 @@
+.account { position: relative; }
+
+.account__button {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-1) var(--s-2);
+  border-radius: var(--r-pill);
+  border: 1px solid transparent;
+  color: var(--ink-2);
+  font-size: var(--t-sm);
+  font-weight: 550;
+  max-width: 190px;
+}
+.account__button:hover { background: var(--surface-2); border-color: var(--line); }
+
+.account__avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--surface-3);
+  flex: none;
+}
+.account__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.account__chevron { width: 12px; height: 12px; flex: none; opacity: 0.7; }
+
+.account__menu {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + 8px);
+  min-width: 232px;
+  padding: var(--s-2);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-3);
+  z-index: 40;
+  animation: menu-in var(--dur-2) var(--ease);
+}
+@keyframes menu-in {
+  from { opacity: 0; transform: translateY(-4px); }
+}
+
+.account__email {
+  padding: var(--s-2) var(--s-3) var(--s-3);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  border-bottom: 1px solid var(--line);
+  margin-bottom: var(--s-2);
+  overflow-wrap: anywhere;
+}
+
+.account__item {
+  display: block;
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: var(--t-md);
+  color: var(--ink-1);
+  text-align: start;
+}
+.account__item:hover { background: var(--surface-2); text-decoration: none; }
+.account__item--danger { color: var(--status-critical); }
+.account__item--danger:hover { background: var(--status-critical-soft); }
+
+@media (max-width: 560px) {
+  .account__name { display: none; }
+  .account__chevron { display: none; }
+}

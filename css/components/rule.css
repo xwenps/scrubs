@@ -1,0 +1,204 @@
+/* Shift-counter rule cards and their editor. */
+
+.rule-list { display: flex; flex-direction: column; gap: var(--s-3); }
+
+.rule {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  overflow: hidden;
+  transition: border-color var(--dur-2) var(--ease), box-shadow var(--dur-2) var(--ease);
+}
+.rule.is-editing { border-color: var(--accent); box-shadow: var(--shadow-2); }
+.rule.is-disabled .rule__summary { opacity: 0.55; }
+
+.rule__summary {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+}
+
+.rule__color {
+  width: 10px;
+  align-self: stretch;
+  min-height: 34px;
+  border-radius: var(--r-pill);
+  background: var(--rule-color, var(--series-1));
+  flex: none;
+}
+
+.rule__text { flex: 1; min-width: 0; }
+.rule__name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 600;
+  font-size: var(--t-base);
+}
+.rule__name span:first-child {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rule__edited-badge {
+  flex: none;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: var(--status-warning);
+  background: color-mix(in srgb, var(--status-warning) 16%, transparent);
+  border-radius: var(--r-pill);
+  padding: 1px var(--s-2);
+}
+.rule__desc {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.rule__desc b { color: var(--ink-2); font-weight: 600; }
+
+.rule__count {
+  text-align: end;
+  flex: none;
+  font-variant-numeric: tabular-nums;
+}
+.rule__count strong { font-size: var(--t-lg); font-weight: 620; display: block; line-height: 1.2; }
+.rule__count span { font-size: var(--t-xs); color: var(--ink-3); }
+
+.rule__actions { display: flex; align-items: center; gap: var(--s-1); flex: none; }
+
+.rule__editor {
+  border-top: 1px solid var(--line);
+  background: var(--surface-2);
+  padding: var(--s-5) var(--s-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-5);
+}
+
+.rule__fieldset { display: flex; flex-direction: column; gap: var(--s-3); }
+.rule__legend {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+/* The plain-English sentence builder: "Count an event when its [title]
+   [contains] [HP6]". Each token is a control. */
+.sentence {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-base);
+  color: var(--ink-2);
+  line-height: 2.2;
+}
+.sentence__word { color: var(--ink-3); }
+.sentence .select { width: auto; min-width: 0; background: var(--surface); }
+.sentence .input { flex: 1 1 200px; min-width: 140px; }
+
+.match-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 168px), 1fr));
+  gap: var(--s-2);
+}
+.match-option {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--s-3);
+  text-align: start;
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  background: var(--surface);
+  transition: border-color var(--dur-1) var(--ease), background var(--dur-1) var(--ease);
+}
+.match-option:hover { border-color: var(--line-strong); }
+.match-option[aria-pressed="true"] {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+.match-option__name { font-size: var(--t-md); font-weight: 600; color: var(--ink-1); }
+.match-option__eg { font-size: var(--t-xs); color: var(--ink-3); }
+.match-option[aria-pressed="true"] .match-option__eg { color: var(--accent-ink); }
+
+.color-picker { display: flex; flex-wrap: wrap; gap: var(--s-2); }
+.color-dot {
+  width: 26px;
+  height: 26px;
+  border-radius: var(--r-sm);
+  background: var(--dot, var(--series-1));
+  border: 2px solid transparent;
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  position: relative;
+}
+.color-dot[aria-pressed="true"] {
+  border-color: var(--surface-2);
+  outline: 2px solid var(--ink-1);
+  outline-offset: 0;
+}
+
+/* Live preview of what the rule currently matches. */
+.preview {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  overflow: hidden;
+}
+.preview__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-3) var(--s-4);
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.preview__count { font-size: var(--t-sm); color: var(--ink-2); }
+.preview__count strong { color: var(--ink-1); font-variant-numeric: tabular-nums; }
+.preview__list { max-height: 188px; overflow-y: auto; }
+.preview__item {
+  display: flex;
+  align-items: center;
+  gap: var(--s-3);
+  padding: var(--s-2) var(--s-4);
+  font-size: var(--t-sm);
+  border-bottom: 1px solid var(--line);
+}
+.preview__item:last-child { border-bottom: 0; }
+.preview__item mark {
+  background: color-mix(in srgb, var(--rule-color, var(--series-1)) 24%, transparent);
+  color: inherit;
+  border-radius: 3px;
+  padding: 0 2px;
+}
+.preview__title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.preview__date { color: var(--ink-3); font-size: var(--t-xs); flex: none; font-variant-numeric: tabular-nums; }
+.preview__empty { padding: var(--s-4); font-size: var(--t-sm); color: var(--ink-3); text-align: center; }
+
+.tester { display: flex; flex-direction: column; gap: var(--s-2); }
+.tester__result {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  font-weight: 550;
+}
+.tester__result[data-match="yes"] { color: var(--status-good); }
+.tester__result[data-match="no"] { color: var(--ink-3); }
+
+@media (max-width: 560px) {
+  .rule__summary { flex-wrap: wrap; }
+  .rule__count { order: 3; }
+  .rule__actions { order: 4; margin-inline-start: auto; }
+  .rule__text { flex-basis: calc(100% - 60px); }
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en" data-theme="auto">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <title>Scrubs — shift counter</title>
+  <meta name="description" content="Count and visualise your worked and scheduled shifts straight from Google Calendar." />
+  <meta name="color-scheme" content="light dark" />
+  <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="css/main.css" />
+  <!--
+    Theme is applied before first paint to avoid a flash of the wrong palette.
+    Kept inline deliberately; it is the only script that must run render-blocking.
+  -->
+  <script>
+    (function () {
+      try {
+        var t = localStorage.getItem('scrubs.theme') || 'auto';
+        document.documentElement.dataset.theme = t;
+      } catch (e) { /* storage blocked — fall back to the auto default */ }
+    })();
+  </script>
+</head>
+<body>
+  <a class="skip-link" href="#main">Skip to content</a>
+
+  <div id="app" class="app" data-state="booting">
+    <header class="app-bar" id="app-bar" hidden>
+      <a class="brand" href="#/dashboard">
+        <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 32 32"><path d="M11 8v5a5 5 0 0 0 10 0V8" /><path d="M16 18v3.5a3.5 3.5 0 0 0 7 0V20" /><circle cx="23" cy="18.5" r="2" /></svg></span>
+        <span class="brand__name">Scrubs</span>
+      </a>
+
+      <nav class="app-nav" id="app-nav" aria-label="Primary">
+        <a class="app-nav__link" href="#/dashboard" data-route="dashboard">Dashboard</a>
+        <a class="app-nav__link" href="#/rules" data-route="rules">Shift counters</a>
+      </nav>
+
+      <div class="app-bar__end">
+        <div id="theme-toggle-slot"></div>
+        <div class="account" id="account" hidden>
+          <button class="account__button" type="button" id="account-button" aria-expanded="false" aria-haspopup="menu">
+            <img class="account__avatar" id="account-avatar" alt="" width="28" height="28" />
+            <span class="account__name" id="account-name"></span>
+            <svg class="account__chevron" viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 4.5 6 8l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+          <div class="account__menu" id="account-menu" role="menu" hidden>
+            <p class="account__email" id="account-email"></p>
+            <button class="account__item" type="button" role="menuitem" data-action="reload">Reload calendar</button>
+            <a class="account__item" role="menuitem" id="account-sheet-link" href="#" target="_blank" rel="noopener">Open config sheet</a>
+            <button class="account__item account__item--danger" type="button" role="menuitem" data-action="sign-out">Sign out</button>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-main" id="main" tabindex="-1"></main>
+
+    <div class="app-boot" id="app-boot">
+      <span class="spinner" aria-hidden="true"></span>
+      <p>Starting up…</p>
+    </div>
+  </div>
+
+  <div class="toast-stack" id="toast-stack" aria-live="polite" aria-atomic="false"></div>
+
+  <!--
+    Per-environment values, generated at container start from .env. A classic
+    script so it is applied synchronously, before any module reads it.
+  -->
+  <script src="config/runtime-config.js"></script>
+
+  <!--
+    The boot guard is a classic script on purpose: it has to keep running in the
+    very cases where the module below cannot load (opened as a file://, blocked,
+    or missing) so it can explain what went wrong instead of leaving the page on
+    its loading state. See js/boot-guard.js.
+  -->
+  <script src="js/boot-guard.js"></script>
+  <script type="module" src="js/main.js"></script>
+</body>
+</html>

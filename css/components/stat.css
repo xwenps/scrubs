@@ -1,0 +1,94 @@
+/* Hero figure — exactly one per view; the number a dashboard leads with. */
+.hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--s-5);
+  padding: var(--s-6);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-lg);
+  box-shadow: var(--shadow-1);
+}
+
+.hero__figure { min-width: 0; }
+.hero__label { font-size: var(--t-sm); color: var(--ink-3); font-weight: 550; }
+.hero__value {
+  font-size: var(--t-hero);
+  font-weight: 620;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  margin-top: var(--s-1);
+}
+.hero__unit { font-size: var(--t-xl); font-weight: 550; color: var(--ink-3); margin-inline-start: var(--s-2); }
+.hero__meta { margin-top: var(--s-2); font-size: var(--t-md); color: var(--ink-2); }
+
+.hero__split {
+  display: flex;
+  gap: var(--s-6);
+  flex-wrap: wrap;
+}
+.hero__split-item { min-width: 96px; }
+.hero__split-label {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.hero__split-value {
+  font-size: var(--t-2xl);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  margin-top: 2px;
+}
+
+/* Stat tile — label · value · optional meta. */
+.stat {
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+  min-width: 0;
+}
+.stat__label {
+  font-size: var(--t-sm);
+  color: var(--ink-3);
+  font-weight: 550;
+  display: block;
+}
+.stat__value {
+  font-size: var(--t-2xl);
+  font-weight: 620;
+  letter-spacing: -0.025em;
+  margin-top: var(--s-2);
+  line-height: 1.1;
+}
+.stat__value small { font-size: var(--t-base); font-weight: 550; color: var(--ink-3); margin-inline-start: 4px; }
+.stat__meta {
+  margin-top: var(--s-1);
+  font-size: var(--t-sm);
+  line-height: 1.4;
+  color: var(--ink-3);
+  /* Two lines, then ellipsis — a truncated single line loses too much. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+}
+
+.swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 3px;
+  flex: none;
+  display: inline-block;
+  background: var(--swatch, var(--ink-3));
+}
+.swatch--line { width: 14px; height: 3px; border-radius: 2px; }

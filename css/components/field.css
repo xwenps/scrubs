@@ -1,0 +1,105 @@
+.field { display: flex; flex-direction: column; gap: var(--s-2); min-width: 0; }
+
+.field__label {
+  font-size: var(--t-sm);
+  font-weight: 600;
+  color: var(--ink-2);
+}
+
+.field__hint { font-size: var(--t-xs); color: var(--ink-3); line-height: 1.45; }
+.field__error { font-size: var(--t-xs); color: var(--status-critical); }
+
+.input,
+.textarea,
+.select {
+  width: 100%;
+  min-height: 38px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  color: var(--ink-1);
+  font-size: var(--t-md);
+  transition: border-color var(--dur-1) var(--ease), box-shadow var(--dur-1) var(--ease);
+}
+.input::placeholder, .textarea::placeholder { color: var(--ink-3); }
+
+.input:focus,
+.textarea:focus,
+.select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.input[aria-invalid="true"] { border-color: var(--status-critical); }
+
+.textarea { min-height: 76px; resize: vertical; line-height: 1.5; }
+
+.select {
+  appearance: none;
+  padding-inline-end: var(--s-7);
+  /* A fixed mid-grey chevron: readable against both the light and dark input
+     surfaces, and it survives the data URI (which cannot see currentColor). */
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 6.5 8 10.5l4-4' fill='none' stroke='%23898781' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+  background-position: calc(100% - 10px) 50%;
+  background-size: 14px 14px;
+  background-repeat: no-repeat;
+  cursor: pointer;
+}
+
+.input--mono { font-family: var(--font-mono); font-size: var(--t-sm); }
+
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-md);
+  color: var(--ink-2);
+  cursor: pointer;
+  user-select: none;
+}
+.check input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+  flex: none;
+}
+
+/* Switch — used for enable/disable toggles where the state is the point. */
+.switch { display: inline-flex; align-items: center; gap: var(--s-2); cursor: pointer; }
+.switch input { position: absolute; opacity: 0; width: 0; height: 0; }
+.switch__track {
+  width: 34px;
+  height: 20px;
+  border-radius: var(--r-pill);
+  background: var(--line-strong);
+  position: relative;
+  transition: background var(--dur-2) var(--ease);
+  flex: none;
+}
+.switch__track::after {
+  content: "";
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--surface);
+  box-shadow: var(--shadow-1);
+  transition: transform var(--dur-2) var(--ease);
+}
+.switch input:checked + .switch__track { background: var(--accent); }
+.switch input:checked + .switch__track::after { transform: translateX(14px); }
+.switch input:focus-visible + .switch__track {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.input-row { display: flex; gap: var(--s-2); align-items: center; flex-wrap: wrap; }
+.input-row > .input { flex: 1 1 200px; }
+
+/* Date pairs need to sit on one line inside a popover, so they get a much
+   smaller basis than a general-purpose input row. */
+.input-row--dates { flex-wrap: nowrap; }
+.input-row--dates > .input { flex: 1 1 0; min-width: 0; padding-inline: var(--s-2); }

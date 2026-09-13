@@ -1,0 +1,237 @@
+/* ---------------------------------------------------------------------------
+   Design tokens.
+
+   Light is defined on bare :root. Dark is declared twice — once behind the OS
+   preference (guarded so an explicit light choice still wins) and once behind
+   the explicit [data-theme="dark"] stamp — so the in-app toggle beats the OS
+   setting in both directions.
+
+   The `--series-*` slots are a validated categorical palette: hues are assigned
+   in fixed order and never cycled. Past slot 8 a series folds into `--series-other`.
+   --------------------------------------------------------------------------- */
+
+:root {
+  color-scheme: light;
+
+  /* Surfaces */
+  --plane: #f4f6f5;
+  --surface: #ffffff;
+  --surface-2: #f7f9f8;
+  --surface-3: #eef2f1;
+  --surface-invert: #11201d;
+
+  /* Ink */
+  --ink-1: #11201d;
+  --ink-2: #4c5a57;
+  --ink-3: #6b7a77;
+  --ink-invert: #f4f6f5;
+
+  /* Lines */
+  --line: #e2e7e5;
+  --line-strong: #cdd6d3;
+
+  /* Brand accent — UI chrome only. Never used as a data colour, so it can
+     never be mistaken for a series. */
+  --accent: #0d7a6c;
+  --accent-hover: #0a6459;
+  --accent-ink: #08544a;
+  --accent-soft: #e3f2ef;
+  --accent-contrast: #ffffff;
+
+  /* Status — reserved; never reused as a series colour. */
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --status-good-soft: #e6f5e6;
+  --status-warning-soft: #fdf3de;
+  --status-critical-soft: #fbe9e9;
+
+  /* Chart chrome */
+  --grid: #e6eae9;
+  --axis: #d3dad8;
+  --chart-surface: var(--surface);
+
+  /* Categorical series (light steps) */
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --series-5: #e87ba4;
+  --series-6: #008300;
+  --series-7: #4a3aa7;
+  --series-8: #e34948;
+  --series-other: #9aa6a3;
+
+  /* Sequential ramp (one hue, light → dark) for magnitude encodings */
+  --seq-0: #eef2f1;
+  --seq-1: #cde2fb;
+  --seq-2: #9ec5f4;
+  --seq-3: #6da7ec;
+  --seq-4: #3987e5;
+  --seq-5: #256abf;
+  --seq-6: #184f95;
+
+  /* Elevation — restrained; borders do most of the separating. */
+  --shadow-1: 0 1px 2px rgba(17, 32, 29, 0.05);
+  --shadow-2: 0 6px 16px -6px rgba(17, 32, 29, 0.14), 0 2px 4px rgba(17, 32, 29, 0.05);
+  --shadow-3: 0 18px 48px -18px rgba(17, 32, 29, 0.28), 0 2px 8px rgba(17, 32, 29, 0.06);
+
+  /* Radii */
+  --r-xs: 4px;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-xl: 20px;
+  --r-pill: 999px;
+
+  /* Spacing scale (4px base) */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 40px;
+  --s-9: 56px;
+  --s-10: 72px;
+
+  /* Type */
+  --font-sans: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+
+  --t-xs: 0.6875rem;  /* 11 */
+  --t-sm: 0.8125rem;  /* 13 */
+  --t-md: 0.875rem;   /* 14 */
+  --t-base: 0.9375rem;/* 15 */
+  --t-lg: 1.0625rem;  /* 17 */
+  --t-xl: 1.3125rem;  /* 21 */
+  --t-2xl: 1.625rem;  /* 26 */
+  --t-3xl: 2.125rem;  /* 34 */
+  --t-hero: 3rem;     /* 48 */
+
+  /* Motion */
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+
+  /* Layout */
+  --app-bar-h: 60px;
+  --content-max: 1180px;
+}
+
+/* Dark values, defined once and shared by both scopes below. */
+@media (prefers-color-scheme: dark) {
+  :root:where(:not([data-theme="light"])) {
+    color-scheme: dark;
+
+    --plane: #0c100f;
+    --surface: #161a19;
+    --surface-2: #1d2322;
+    --surface-3: #242b2a;
+    --surface-invert: #eaf0ee;
+
+    --ink-1: #eaf0ee;
+    --ink-2: #a8b4b1;
+    --ink-3: #7d8a87;
+    --ink-invert: #0c100f;
+
+    --line: #262d2c;
+    --line-strong: #36403e;
+
+    --accent: #3ec7ae;
+    --accent-hover: #5ad6c0;
+    --accent-ink: #3ec7ae;
+    --accent-soft: #12302c;
+    --accent-contrast: #06201c;
+
+    --status-good: #0ca30c;
+    --status-warning: #fab219;
+    --status-critical: #d03b3b;
+    --status-good-soft: #102a12;
+    --status-warning-soft: #2e2510;
+    --status-critical-soft: #2e1616;
+
+    --grid: #232a29;
+    --axis: #323b39;
+
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+    --series-5: #d55181;
+    --series-6: #008300;
+    --series-7: #9085e9;
+    --series-8: #e66767;
+    --series-other: #6f7b79;
+
+    --seq-0: #1d2322;
+    --seq-1: #0d366b;
+    --seq-2: #184f95;
+    --seq-3: #256abf;
+    --seq-4: #2a78d6;
+    --seq-5: #5598e7;
+    --seq-6: #9ec5f4;
+
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+    --shadow-2: 0 6px 16px -6px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+    --shadow-3: 0 18px 48px -18px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4);
+  }
+}
+
+:root[data-theme="dark"] {
+  color-scheme: dark;
+
+  --plane: #0c100f;
+  --surface: #161a19;
+  --surface-2: #1d2322;
+  --surface-3: #242b2a;
+  --surface-invert: #eaf0ee;
+
+  --ink-1: #eaf0ee;
+  --ink-2: #a8b4b1;
+  --ink-3: #7d8a87;
+  --ink-invert: #0c100f;
+
+  --line: #262d2c;
+  --line-strong: #36403e;
+
+  --accent: #3ec7ae;
+  --accent-hover: #5ad6c0;
+  --accent-ink: #3ec7ae;
+  --accent-soft: #12302c;
+  --accent-contrast: #06201c;
+
+  --status-good: #0ca30c;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+  --status-good-soft: #102a12;
+  --status-warning-soft: #2e2510;
+  --status-critical-soft: #2e1616;
+
+  --grid: #232a29;
+  --axis: #323b39;
+
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+  --series-5: #d55181;
+  --series-6: #008300;
+  --series-7: #9085e9;
+  --series-8: #e66767;
+  --series-other: #6f7b79;
+
+  --seq-0: #1d2322;
+  --seq-1: #0d366b;
+  --seq-2: #184f95;
+  --seq-3: #256abf;
+  --seq-4: #2a78d6;
+  --seq-5: #5598e7;
+  --seq-6: #9ec5f4;
+
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-2: 0 6px 16px -6px rgba(0, 0, 0, 0.6), 0 2px 4px rgba(0, 0, 0, 0.4);
+  --shadow-3: 0 18px 48px -18px rgba(0, 0, 0, 0.8), 0 2px 8px rgba(0, 0, 0, 0.4);
+}

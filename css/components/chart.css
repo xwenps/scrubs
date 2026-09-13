@@ -1,0 +1,91 @@
+.chart {
+  position: relative;
+  width: 100%;
+}
+.chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+.chart__grid-line { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
+.chart__axis-line { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }
+.chart__tick {
+  fill: var(--ink-3);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.chart__label { fill: var(--ink-2); font-size: 11px; font-weight: 600; }
+.chart__value { fill: var(--ink-1); font-size: 11px; font-weight: 600; }
+
+.chart__mark { transition: opacity var(--dur-1) var(--ease); }
+.chart.is-hovering .chart__mark { opacity: 0.42; }
+.chart.is-hovering .chart__mark.is-active { opacity: 1; }
+
+.chart__hit { fill: transparent; cursor: pointer; }
+
+/* Legend — always present at two or more series. */
+.legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-4);
+  margin-top: var(--s-4);
+}
+.legend__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-sm);
+  color: var(--ink-2);
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: default;
+}
+.legend__item .swatch { margin-top: 1px; }
+
+/* Floating tooltip shared by every chart. */
+.chart-tip {
+  position: fixed;
+  z-index: 70;
+  pointer-events: none;
+  min-width: 130px;
+  max-width: 260px;
+  padding: var(--s-2) var(--s-3);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-sm);
+  box-shadow: var(--shadow-3);
+  font-size: var(--t-sm);
+  color: var(--ink-1);
+  opacity: 0;
+  transform: translate(-50%, -100%);
+  transition: opacity var(--dur-1) var(--ease);
+}
+.chart-tip.is-visible { opacity: 1; }
+.chart-tip__title { font-weight: 600; margin-bottom: var(--s-1); }
+.chart-tip__row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  color: var(--ink-2);
+  line-height: 1.6;
+}
+.chart-tip__row strong {
+  margin-inline-start: auto;
+  color: var(--ink-1);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Calendar heatmap */
+.heatmap { overflow-x: auto; padding-bottom: var(--s-1); }
+.heatmap__cell { rx: 2.5; transition: none; }
+.heatmap__month { fill: var(--ink-3); font-size: 10px; }
+.heatmap__dow { fill: var(--ink-3); font-size: 10px; }
+
+.scale-legend {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  margin-top: var(--s-3);
+}
+.scale-legend__steps { display: flex; gap: 3px; }
+.scale-legend__step { width: 12px; height: 12px; border-radius: 3px; }

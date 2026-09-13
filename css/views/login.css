@@ -1,0 +1,117 @@
+.login {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: stretch;
+}
+
+.login__pane {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: var(--s-8) var(--s-5) var(--s-9);
+  padding-inline: max(var(--s-5), env(safe-area-inset-left)) max(var(--s-5), env(safe-area-inset-right));
+}
+
+.login__inner { width: min(420px, 100%); margin-inline: auto; }
+
+.login__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-3);
+  margin-bottom: var(--s-7);
+}
+.login__brand .brand__mark { width: 32px; height: 32px; border-radius: 9px; }
+.login__brand .brand__mark svg { width: 21px; height: 21px; }
+.login__brand-name { font-size: var(--t-lg); font-weight: 650; letter-spacing: -0.02em; }
+
+.login__title {
+  font-size: var(--t-3xl);
+  line-height: 1.12;
+  letter-spacing: -0.03em;
+  font-weight: 640;
+}
+.login__sub {
+  margin-top: var(--s-3);
+  font-size: var(--t-base);
+  color: var(--ink-2);
+  line-height: 1.6;
+  max-width: 40ch;
+}
+
+.login__actions { margin-top: var(--s-6); }
+
+.login__scopes {
+  margin-top: var(--s-4);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+  line-height: 1.6;
+}
+
+.login__aside {
+  display: none;
+  place-content: center;
+  position: relative;
+  padding: var(--s-9) var(--s-8);
+  background: var(--surface);
+  border-inline-start: 1px solid var(--line);
+  overflow: hidden;
+}
+
+/* The aside is a quiet demonstration of the product, not decoration: a
+   miniature of the same marks the dashboard draws. */
+.login__aside-inner { position: relative; z-index: 1; max-width: 380px; margin: auto; }
+.login__aside-eyebrow { margin-bottom: var(--s-4); }
+
+.mini-card {
+  background: var(--plane);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  padding: var(--s-4);
+  margin-bottom: var(--s-3);
+}
+.mini-card__label { font-size: var(--t-xs); color: var(--ink-3); font-weight: 550; }
+.mini-card__value {
+  font-size: var(--t-2xl);
+  font-weight: 640;
+  letter-spacing: -0.025em;
+  margin-top: 2px;
+}
+.mini-bars { display: flex; align-items: flex-end; gap: 4px; height: 58px; margin-top: var(--s-3); }
+.mini-bars span {
+  flex: 1;
+  border-radius: 3px 3px 0 0;
+  background: var(--seq-3);
+  min-height: 4px;
+}
+.mini-bars span:nth-child(odd) { background: var(--seq-4); }
+
+.login__features { display: flex; flex-direction: column; gap: var(--s-3); margin-top: var(--s-5); }
+.login__feature { display: flex; gap: var(--s-3); font-size: var(--t-sm); color: var(--ink-2); line-height: 1.5; }
+.login__feature svg { width: 16px; height: 16px; flex: none; margin-top: 2px; color: var(--accent-ink); }
+
+.login__foot {
+  margin-top: var(--s-7);
+  padding-top: var(--s-4);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+/* Config drawer on the login screen */
+.config-drawer { margin-top: var(--s-6); }
+.config-drawer .field { margin-bottom: var(--s-4); }
+.config-drawer .field:last-child { margin-bottom: 0; }
+
+.sheet-status {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--t-xs);
+  color: var(--ink-3);
+}
+
+@media (min-width: 900px) {
+  .login { grid-template-columns: 1.05fr 0.95fr; }
+  .login__aside { display: grid; }
+  .login__pane { padding-inline: var(--s-9); }
+}

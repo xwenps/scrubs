@@ -1,0 +1,7 @@
+.DS_Store
+node_modules/
+*.log
+
+# Per-environment deployment values. The values are public (they are served to
+# the browser), but they differ per environment — keep them out of the repo.
+.env

@@ -1,0 +1,78 @@
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  padding: 3px var(--s-3);
+  border-radius: var(--r-pill);
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  font-size: var(--t-xs);
+  font-weight: 550;
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.chip--accent { background: var(--accent-soft); border-color: transparent; color: var(--accent-ink); }
+.chip--good { background: var(--status-good-soft); border-color: transparent; color: var(--status-good); }
+.chip--warning { background: var(--status-warning-soft); border-color: transparent; color: var(--ink-1); }
+.chip--quiet { background: transparent; }
+
+/* Toolbar — one row of filters above the charts. */
+.toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  padding: var(--s-3);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-1);
+}
+.toolbar__group { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.toolbar__spacer { flex: 1 1 auto; }
+.toolbar__label {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+
+.popover {
+  position: absolute;
+  z-index: 45;
+  min-width: 250px;
+  padding: var(--s-2);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--r-md);
+  box-shadow: var(--shadow-3);
+  animation: menu-in var(--dur-2) var(--ease);
+}
+.popover__section { padding: var(--s-2) var(--s-2) var(--s-1); }
+.popover__title {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  padding: var(--s-2) var(--s-3) var(--s-1);
+}
+.popover__option {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-sm);
+  font-size: var(--t-md);
+  color: var(--ink-1);
+  text-align: start;
+}
+.popover__option:hover { background: var(--surface-2); }
+.popover__check { width: 16px; flex: none; color: var(--accent); font-weight: 700; }
+.popover__option[aria-checked="true"] { font-weight: 600; }
+.popover__divider { height: 1px; background: var(--line); margin: var(--s-2) 0; }
+.popover__foot { padding: var(--s-2) var(--s-3) var(--s-1); }
+
+.popover-host { position: relative; }

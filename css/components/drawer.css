@@ -1,0 +1,44 @@
+/* Disclosure drawer — used for the advanced login options and rule editors.
+   Built on a button + region pair so it stays keyboard- and SR-accessible. */
+
+.drawer { border-top: 1px solid var(--line); }
+
+.drawer__toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  width: 100%;
+  padding: var(--s-3) 0;
+  font-size: var(--t-sm);
+  font-weight: 550;
+  color: var(--ink-2);
+  text-align: start;
+}
+.drawer__toggle:hover { color: var(--ink-1); }
+
+.drawer__chevron {
+  width: 14px;
+  height: 14px;
+  flex: none;
+  transition: transform var(--dur-2) var(--ease);
+}
+.drawer__toggle[aria-expanded="true"] .drawer__chevron { transform: rotate(90deg); }
+
+.drawer__badge {
+  margin-inline-start: auto;
+  font-size: var(--t-xs);
+  font-weight: 600;
+  color: var(--accent-ink);
+  background: var(--accent-soft);
+  padding: 2px var(--s-2);
+  border-radius: var(--r-pill);
+}
+
+.drawer__panel {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--dur-3) var(--ease);
+}
+.drawer__panel > div { overflow: hidden; }
+.drawer.is-open > .drawer__panel { grid-template-rows: 1fr; }
+.drawer.is-open > .drawer__panel > div { padding-bottom: var(--s-4); }

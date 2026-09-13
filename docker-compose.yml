@@ -1,0 +1,17 @@
+services:
+  scrubs:
+    build: .
+    image: scrubs:latest
+    container_name: scrubs
+    restart: unless-stopped
+    ports:
+      - "${SCRUBS_PORT:-8080}:8080"
+    # Read at container START, not at build time — so changing .env and
+    # restarting is enough to reconfigure; no rebuild required.
+    env_file:
+      - .env
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8080/healthz"]
+      interval: 30s
+      timeout: 3s
+      retries: 3

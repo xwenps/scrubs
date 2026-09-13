@@ -1,0 +1,36 @@
+/* Segmented control — plain-language options, one visible choice. */
+.segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--r-sm);
+  max-width: 100%;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.segmented::-webkit-scrollbar { display: none; }
+
+.segmented__option {
+  padding: var(--s-2) var(--s-3);
+  border-radius: var(--r-xs);
+  font-size: var(--t-sm);
+  font-weight: 550;
+  color: var(--ink-2);
+  white-space: nowrap;
+  transition: background var(--dur-1) var(--ease), color var(--dur-1) var(--ease);
+}
+.segmented__option:hover { color: var(--ink-1); }
+.segmented__option[aria-pressed="true"] {
+  background: var(--surface);
+  color: var(--ink-1);
+  box-shadow: var(--shadow-1);
+}
+
+.segmented--wrap { flex-wrap: wrap; overflow: visible; }
+
+/* Theme toggle: three states, system included. */
+.theme-toggle { display: inline-flex; }
+.theme-toggle .segmented__option { padding: var(--s-2); line-height: 0; }
+.theme-toggle svg { width: 16px; height: 16px; }

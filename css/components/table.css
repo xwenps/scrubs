@@ -1,0 +1,73 @@
+.table-wrap { overflow-x: auto; }
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--t-md);
+}
+
+.table th,
+.table td {
+  padding: var(--s-3) var(--s-4);
+  text-align: start;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.table thead th {
+  font-size: var(--t-xs);
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border-bottom-color: var(--line-strong);
+  position: sticky;
+  top: 0;
+  background: var(--surface);
+}
+
+.table tbody tr:last-child td { border-bottom: 0; }
+.table tbody tr:hover td { background: var(--surface-2); }
+
+.table .num {
+  text-align: end;
+  font-variant-numeric: tabular-nums;
+}
+
+.table__name {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-weight: 550;
+  max-width: 280px;
+}
+.table__name span { overflow: hidden; text-overflow: ellipsis; }
+
+.table__sub { font-size: var(--t-xs); color: var(--ink-3); white-space: normal; }
+
+.table tfoot td {
+  font-weight: 650;
+  border-top: 1px solid var(--line-strong);
+  background: var(--surface-2);
+}
+
+/* Proportion bar inside a table cell — a share rendered in place. */
+.share {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  min-width: 120px;
+}
+.share__track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-3);
+  overflow: hidden;
+}
+.share__fill {
+  height: 100%;
+  border-radius: 3px;
+  background: var(--share-color, var(--series-1));
+}
+.share__pct { font-size: var(--t-xs); color: var(--ink-3); font-variant-numeric: tabular-nums; min-width: 36px; text-align: end; }

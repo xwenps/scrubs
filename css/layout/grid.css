@@ -1,0 +1,38 @@
+/* Composition primitives. */
+
+.stack { display: flex; flex-direction: column; }
+.stack--2 { gap: var(--s-2); }
+.stack--3 { gap: var(--s-3); }
+.stack--4 { gap: var(--s-4); }
+.stack--6 { gap: var(--s-6); }
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  flex-wrap: wrap;
+}
+.row--between { justify-content: space-between; }
+.row--tight { gap: var(--s-1); }
+
+.grid { display: grid; gap: var(--s-4); }
+
+/* Auto-fitting card grids. min-width is expressed in ch/px small enough that a
+   400px viewport never forces a horizontal scroll. */
+.grid--stats { grid-template-columns: repeat(auto-fit, minmax(min(100%, 170px), 1fr)); }
+.grid--halves { grid-template-columns: repeat(auto-fit, minmax(min(100%, 360px), 1fr)); }
+.grid--thirds { grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+
+.section { margin-top: var(--s-7); }
+.section__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--s-3);
+  margin-bottom: var(--s-3);
+  flex-wrap: wrap;
+}
+.section__title { font-size: var(--t-lg); font-weight: 600; }
+.section__note { font-size: var(--t-sm); color: var(--ink-3); }
+
+.divider { height: 1px; background: var(--line); border: 0; }

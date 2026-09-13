@@ -1,0 +1,13 @@
+.git
+.gitignore
+.env
+.env.example
+README.md
+docs/
+dev/
+scripts/generate-config.sh
+Dockerfile
+.dockerignore
+docker-compose.yml
+**/.DS_Store
+*.log
