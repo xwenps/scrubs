@@ -108,6 +108,11 @@ function normalizeEvent(item, calendarId, calendarName, hoursPerAllDayShift) {
     hours,
     htmlLink: item.htmlLink || '',
     status: item.status || 'confirmed',
+    // Google's raw all-day date strings (exclusive end, timezone-free) —
+    // "block mode" uses these for an exact day-span instead of `start`/`end`.
+    // See js/domain/block.js.
+    rawStartDate: allDay ? item.start.date : null,
+    rawEndDate: allDay ? item.end.date : null,
   };
 }
 

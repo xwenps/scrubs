@@ -15,6 +15,7 @@ import { MATCH_TYPES, MATCH_TYPE_BY_ID, FIELDS, compileRule, highlightSegments, 
 import { previewRule } from '../../domain/counter.js';
 import { SERIES_SLOTS, seriesColor } from '../palette.js';
 import { date as fmtDate, number } from '../../core/format.js';
+import { createPeriodPicker } from './period-picker.js';
 
 const PREVIEW_DEBOUNCE = 140;
 
@@ -149,6 +150,101 @@ export function createRuleEditor(config) {
     'Ignore extra spaces',
   ]);
 
+  /* ---- hours: multi-day blocks -------------------------------------------
+   * A block is one calendar event standing in for several daily shifts (e.g.
+   * a 14-day stretch instead of fourteen 8-hour entries), so its raw duration
+   * is meaningless — this credits days-spanned × hours/day instead. */
+
+  const blockHoursInput = el('input.input', {
+    type: 'number',
+    min: '0',
+    step: '0.5',
+    value: rule.blockHoursPerDay || '',
+    style: { 'max-width': '120px' },
+    'aria-label': 'Hours credited per day',
+    on: { change: () => update({ blockHoursPerDay: Number(blockHoursInput.value) || 0 }, { preview: false }) },
+  });
+
+  const blockHoursField = el('div.field', { hidden: !rule.blockMode }, [
+    el('label.field__label', { text: 'Hours credited per day' }),
+    blockHoursInput,
+  ]);
+
+  const blockModeToggle = el('label.check', {}, [
+    el('input', {
+      type: 'checkbox',
+      checked: rule.blockMode,
+      on: {
+        change: (event) => {
+          const checked = event.target.checked;
+          const patch = { blockMode: checked };
+          if (checked && !rule.blockHoursPerDay) patch.blockHoursPerDay = config.settings?.defaultHoursPerShift || 8;
+          update(patch, { preview: false });
+          blockHoursInput.value = rule.blockHoursPerDay || '';
+          blockHoursField.hidden = !rule.blockMode;
+        },
+      },
+    }),
+    'This counter matches multi-day blocks (one event covers several shift-days)',
+  ]);
+
+  /* ---- goals & limits ------------------------------------------------------
+   * One period drives both the goal (floor) and the cap (ceiling) for this
+   * counter, so "this pay period" means the same thing for both. */
+
+  const periodPicker = createPeriodPicker({
+    value: rule.period,
+    onChange: (period) => update({ period }, { preview: false }),
+  });
+
+  const goalTargetInput = el('input.input', {
+    type: 'number',
+    min: '0',
+    step: '1',
+    value: rule.goalTarget || '',
+    style: { 'max-width': '100px' },
+    hidden: !rule.goalEnabled,
+    'aria-label': 'Goal target — shifts per period',
+    on: { change: () => update({ goalTarget: Math.max(0, Math.round(Number(goalTargetInput.value)) || 0) }, { preview: false }) },
+  });
+  const goalToggle = el('label.check', {}, [
+    el('input', {
+      type: 'checkbox',
+      checked: rule.goalEnabled,
+      on: {
+        change: (event) => {
+          update({ goalEnabled: event.target.checked }, { preview: false });
+          goalTargetInput.hidden = !rule.goalEnabled;
+        },
+      },
+    }),
+    'Track a goal (minimum shifts per period)',
+  ]);
+
+  const capTargetInput = el('input.input', {
+    type: 'number',
+    min: '0',
+    step: '1',
+    value: rule.capTarget || '',
+    style: { 'max-width': '100px' },
+    hidden: !rule.capEnabled,
+    'aria-label': 'Cap target — shifts per period',
+    on: { change: () => update({ capTarget: Math.max(0, Math.round(Number(capTargetInput.value)) || 0) }, { preview: false }) },
+  });
+  const capToggle = el('label.check', {}, [
+    el('input', {
+      type: 'checkbox',
+      checked: rule.capEnabled,
+      on: {
+        change: (event) => {
+          update({ capEnabled: event.target.checked }, { preview: false });
+          capTargetInput.hidden = !rule.capEnabled;
+        },
+      },
+    }),
+    'Track a cap (maximum shifts per period, for cancellation planning)',
+  ]);
+
   /* ---- live preview ------------------------------------------------------ */
 
   const previewCount = el('p.preview__count');
@@ -264,6 +360,21 @@ export function createRuleEditor(config) {
     ]),
 
     el('div.rule__fieldset', {}, [
+      el('p.rule__legend', { text: 'Hours' }),
+      blockModeToggle,
+      blockHoursField,
+    ]),
+
+    el('div.rule__fieldset', {}, [
+      el('p.rule__legend', { text: 'Goals & limits' }),
+      periodPicker.element,
+      el('div.stack.stack--2', {}, [
+        el('div.row.row--tight', {}, [goalToggle, goalTargetInput]),
+        el('div.row.row--tight', {}, [capToggle, capTargetInput]),
+      ]),
+    ]),
+
+    el('div.rule__fieldset', {}, [
       el('p.rule__legend', { text: 'Live preview' }),
       el('div.preview', {}, [
         el('div.preview__head', {}, [previewCount]),
@@ -284,6 +395,7 @@ export function createRuleEditor(config) {
     },
     destroy() {
       clearTimeout(previewTimer);
+      periodPicker.destroy();
       root.remove();
     },
   };

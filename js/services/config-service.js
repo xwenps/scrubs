@@ -17,8 +17,60 @@ import { APP_CONFIG } from '../../config/app.config.js';
 import { batchGetValues, getSheetNames, ensureTab, replaceValues } from './sheets.js';
 import { normalizeRule, createRuleId, MATCH_TYPES, clampColorSlot } from '../domain/matcher.js';
 import { isValidPresetId } from '../domain/date-range.js';
+import { PERIOD_TYPES, normalizePeriod } from '../domain/period.js';
 
-const RULE_HEADERS = ['Label', 'Field', 'Match type', 'Value', 'Case sensitive', 'Whole word', 'Enabled', 'Colour', 'ID'];
+const RULE_HEADERS = [
+  'Label', 'Field', 'Match type', 'Value', 'Case sensitive', 'Whole word', 'Enabled', 'Colour', 'ID',
+  'Block mode', 'Hours per day',
+  'Period type', 'Period anchor', 'Period days', 'Period ranges',
+  'Goal enabled', 'Goal target', 'Cap enabled', 'Cap target',
+];
+
+const PERIOD_TYPE_ALIASES = new Map();
+for (const type of PERIOD_TYPES) PERIOD_TYPE_ALIASES.set(slug(type.id), type.id);
+Object.entries({
+  weekly: 'week',
+  biweekly: 'biweek', 'bi-weekly': 'biweek', payperiod: 'biweek', 'pay period': 'biweek', fortnightly: 'biweek', fortnight: 'biweek',
+  monthly: 'month',
+  ndays: 'customDays', 'custom period': 'customDays',
+  customdates: 'customRanges', 'custom dates': 'customRanges',
+}).forEach(([alias, id]) => PERIOD_TYPE_ALIASES.set(slug(alias), id));
+
+function periodTypeFromRaw(value) {
+  return PERIOD_TYPE_ALIASES.get(slug(value)) || 'week';
+}
+
+/** A JSON-encoded list of `{id,label,start,end}` ranges; blank/invalid → none. */
+function parseRangesCell(value) {
+  const text = String(value ?? '').trim();
+  if (!text) return [];
+  try {
+    const parsed = JSON.parse(text);
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+}
+
+function periodFromCells({ type, anchor, days, ranges }) {
+  return normalizePeriod({
+    type: periodTypeFromRaw(type),
+    anchor: String(anchor ?? '').trim(),
+    days: Number(days) || undefined,
+    ranges: parseRangesCell(ranges),
+  });
+}
+
+function serializePeriod(period) {
+  const p = normalizePeriod(period);
+  const typeLabel = PERIOD_TYPES.find((entry) => entry.id === p.type)?.label || p.type;
+  return {
+    type: typeLabel,
+    anchor: p.anchor || '',
+    days: p.type === 'customDays' ? p.days : '',
+    ranges: p.ranges.length ? JSON.stringify(p.ranges) : '',
+  };
+}
 
 const MATCH_ALIASES = new Map();
 for (const type of MATCH_TYPES) {
@@ -107,6 +159,13 @@ export function parseSettings(rows) {
     defaultHoursPerShift: Number(raw.defaulthourspershift ?? raw.hourspershift ?? fallback.defaultHoursPerShift) || 0,
     allTimeYearsBack: Number(raw.alltimeyearsback ?? fallback.allTimeYearsBack) || fallback.allTimeYearsBack,
     title: String(raw.title ?? raw.deploymentname ?? '').trim(),
+    period: periodFromCells({
+      type: raw.periodtype, anchor: raw.periodanchor, days: raw.perioddays, ranges: raw.periodranges,
+    }),
+    goalEnabled: toBool(raw.goalenabled, false),
+    goalTarget: Number(raw.goaltarget) || 0,
+    capEnabled: toBool(raw.capenabled, false),
+    capTarget: Number(raw.captarget) || 0,
   };
 }
 
@@ -141,6 +200,16 @@ export function parseRules(rows) {
     enabled: columnOf('enabled', 'active', 'on'),
     color: columnOf('colour', 'color'),
     id: columnOf('id', 'key'),
+    blockMode: columnOf('block mode', 'blockmode', 'multi-day block', 'multiday block'),
+    blockHoursPerDay: columnOf('hours per day', 'hoursperday', 'block hours per day', 'hours/day'),
+    periodType: columnOf('period type', 'periodtype', 'goal period'),
+    periodAnchor: columnOf('period anchor', 'periodanchor', 'period start'),
+    periodDays: columnOf('period days', 'perioddays', 'period length'),
+    periodRanges: columnOf('period ranges', 'periodranges', 'custom ranges'),
+    goalEnabled: columnOf('goal enabled', 'goalenabled', 'track goal'),
+    goalTarget: columnOf('goal target', 'goaltarget', 'goal'),
+    capEnabled: columnOf('cap enabled', 'capenabled', 'track cap'),
+    capTarget: columnOf('cap target', 'captarget', 'cap', 'max shifts'),
   };
 
   if (cols.label === -1 && cols.value === -1) {
@@ -174,6 +243,15 @@ export function parseRules(rows) {
       wholeWord: toBool(cell('wholeWord'), false),
       enabled: toBool(cell('enabled'), true),
       color: clampColorSlot(cell('color') || (rules.length % 8) + 1),
+      blockMode: toBool(cell('blockMode'), false),
+      blockHoursPerDay: Number(cell('blockHoursPerDay')) || 0,
+      period: periodFromCells({
+        type: cell('periodType'), anchor: cell('periodAnchor'), days: cell('periodDays'), ranges: cell('periodRanges'),
+      }),
+      goalEnabled: toBool(cell('goalEnabled'), false),
+      goalTarget: Number(cell('goalTarget')) || 0,
+      capEnabled: toBool(cell('capEnabled'), false),
+      capTarget: Number(cell('capTarget')) || 0,
     }));
   });
 
@@ -187,6 +265,7 @@ export function serializeRules(rules) {
     ...rules.map((rule) => {
       const normalized = normalizeRule(rule);
       const type = MATCH_TYPES.find((entry) => entry.id === normalized.matchType);
+      const period = serializePeriod(normalized.period);
       return [
         normalized.label,
         normalized.field,
@@ -197,12 +276,23 @@ export function serializeRules(rules) {
         normalized.enabled ? 'TRUE' : 'FALSE',
         normalized.color,
         normalized.id,
+        normalized.blockMode ? 'TRUE' : 'FALSE',
+        normalized.blockHoursPerDay || 0,
+        period.type,
+        period.anchor,
+        period.days,
+        period.ranges,
+        normalized.goalEnabled ? 'TRUE' : 'FALSE',
+        normalized.goalTarget || 0,
+        normalized.capEnabled ? 'TRUE' : 'FALSE',
+        normalized.capTarget || 0,
       ];
     }),
   ];
 }
 
 export function serializeSettings(settings) {
+  const period = serializePeriod(settings.period);
   return [
     ['Key', 'Value'],
     ['defaultRange', settings.defaultRange],
@@ -213,6 +303,14 @@ export function serializeSettings(settings) {
     ['weekStart', settings.weekStart],
     ['defaultHoursPerShift', settings.defaultHoursPerShift || 0],
     ['allTimeYearsBack', settings.allTimeYearsBack || 5],
+    ['periodType', period.type],
+    ['periodAnchor', period.anchor],
+    ['periodDays', period.days],
+    ['periodRanges', period.ranges],
+    ['goalEnabled', settings.goalEnabled ? 'TRUE' : 'FALSE'],
+    ['goalTarget', settings.goalTarget || 0],
+    ['capEnabled', settings.capEnabled ? 'TRUE' : 'FALSE'],
+    ['capTarget', settings.capTarget || 0],
   ];
 }
 
@@ -230,11 +328,39 @@ export async function saveConfig(spreadsheetId, { rules, settings }) {
   }
 }
 
+/** Compare two settings objects, to drive the "unsaved" indicator. */
+export function settingsEqual(a, b) {
+  if (!a || !b) return a === b;
+  const shape = (settings) => JSON.stringify({
+    defaultRange: settings.defaultRange,
+    defaultRangeStart: settings.defaultRangeStart,
+    defaultRangeEnd: settings.defaultRangeEnd,
+    calendarIds: settings.calendarIds,
+    countMode: settings.countMode,
+    weekStart: settings.weekStart,
+    defaultHoursPerShift: settings.defaultHoursPerShift,
+    allTimeYearsBack: settings.allTimeYearsBack,
+    title: settings.title,
+    period: settings.period,
+    goalEnabled: settings.goalEnabled,
+    goalTarget: settings.goalTarget,
+    capEnabled: settings.capEnabled,
+    capTarget: settings.capTarget,
+  });
+  return shape(a) === shape(b);
+}
+
 /** Compare two rule lists ignoring key order, to drive the "unsaved" indicator. */
 export function rulesEqual(a = [], b = []) {
   const shape = (rules) => JSON.stringify(rules.map((rule) => {
-    const { id, label, field, matchType, value, caseSensitive, wholeWord, enabled, color } = normalizeRule(rule);
-    return [id, label, field, matchType, value, caseSensitive, wholeWord, enabled, color];
+    const {
+      id, label, field, matchType, value, caseSensitive, wholeWord, enabled, color,
+      blockMode, blockHoursPerDay, period, goalEnabled, goalTarget, capEnabled, capTarget,
+    } = normalizeRule(rule);
+    return [
+      id, label, field, matchType, value, caseSensitive, wholeWord, enabled, color,
+      blockMode, blockHoursPerDay, period, goalEnabled, goalTarget, capEnabled, capTarget,
+    ];
   }));
   return shape(a) === shape(b);
 }

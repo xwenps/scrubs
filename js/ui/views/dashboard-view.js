@@ -10,6 +10,7 @@ import { store } from '../../core/store.js';
 import { countEvents } from '../../domain/counter.js';
 import { timeSeries, weekdayDistribution, dailyCounts, startHourDistribution, summarize, upcoming } from '../../domain/stats.js';
 import { chooseBucketUnit } from '../../domain/date-range.js';
+import { currentWindow, periodWindows } from '../../domain/period.js';
 import { renderColumnChart } from '../charts/column-chart.js';
 import { renderHeatmap } from '../charts/heatmap.js';
 import { foldSeries, seriesColor, seqColor } from '../palette.js';
@@ -37,7 +38,6 @@ export async function renderDashboardView(mount) {
   const rangePicker = createDateRangePicker({
     value: { preset: state.range?.preset || 'last12months', start: state.range?.startISO, end: state.range?.endISO },
     options: state.settings || {},
-    isDefault: state.range?.preset === state.settings?.defaultRange,
     onChange: (resolved) => setRange(resolved),
     onSetDefault: async (descriptor) => {
       try {
@@ -46,7 +46,6 @@ export async function renderDashboardView(mount) {
           start: descriptor.start,
           end: descriptor.end,
         });
-        rangePicker.setDefaultFlag(true);
         notify.success(
           'Default view updated',
           savedToSheet ? 'Saved to your configuration sheet.' : 'Saved in this browser — no writable config sheet is connected.',
@@ -96,6 +95,13 @@ export async function renderDashboardView(mount) {
     const { range, settings, rules, events, eventsStatus } = current;
     if (!range) return;
 
+    // Keep the picker's own state in sync — it's created once, outside this
+    // function, so it wouldn't otherwise notice the range or the default
+    // changing (e.g. after "Make this my default view", or a picker-external
+    // range change).
+    rangePicker.setValue({ preset: range.preset, start: range.startISO, end: range.endISO });
+    rangePicker.setOptions(settings || {});
+
     rangeSummary.textContent = `${fmtDate.range(range.start, range.end)} · ${range.label}`;
     renderBanner(banner, current);
 
@@ -142,9 +148,12 @@ export async function renderDashboardView(mount) {
     }
 
     const summary = summarize(result, range);
+    const now = new Date();
     const nodes = [
       heroCard(summary, range),
-      statGrid(summary, result),
+      statGrid(summary),
+      goalCard(result, rules, settings, range, now),
+      overcommitCard(result, rules, settings, range, now),
       timeChartCard(result, range, settings, chartTeardowns),
       distributionRow(result, settings, chartTeardowns),
       heatmapCard(result, range, settings, chartTeardowns),
@@ -209,7 +218,7 @@ function heroCard(summary, range) {
   ]);
 }
 
-function statGrid(summary, result) {
+function statGrid(summary) {
   const tiles = [
     {
       label: 'Hours on the clock',
@@ -231,20 +240,6 @@ function statGrid(summary, result) {
       value: summary.busiestMonth.label,
       meta: plural(summary.busiestMonth.value, 'shift'),
     } : null,
-    summary.nextShift ? {
-      label: 'Next shift',
-      value: fmtDate.short(summary.nextShift.start),
-      meta: summary.nextShift.title || 'Untitled',
-    } : {
-      label: 'Last shift',
-      value: summary.lastShift ? fmtDate.short(summary.lastShift.start) : '—',
-      meta: summary.lastShift?.title || 'Nothing recorded',
-    },
-    {
-      label: 'Counters in play',
-      value: number(result.buckets.filter((bucket) => bucket.rule.enabled && bucket.total > 0).length),
-      meta: `${number(result.totals.unmatched)} events not counted`,
-    },
   ].filter(Boolean);
 
   return el('div.grid.grid--stats.section', {}, tiles.map((tile) => el('div.stat', {}, [
@@ -252,6 +247,177 @@ function statGrid(summary, result) {
     el('p.stat__value', { text: tile.value }),
     el('p.stat__meta', { text: tile.meta, title: tile.meta }),
   ])));
+}
+
+/** One shared period per tracker drives both its goal and its cap. */
+function buildTracker({ label, period, events, goalEnabled, goalTarget, capEnabled, capTarget, colorVar, now, weekStart }) {
+  const window = currentWindow(period, now, { weekStart });
+  const count = window ? events.filter((event) => event.start >= window.start && event.start <= window.end).length : 0;
+  return { label, window, count, goalEnabled, goalTarget, capEnabled, capTarget, colorVar };
+}
+
+function trackerRow(tracker) {
+  const { label, window, count, goalEnabled, goalTarget, capEnabled, capTarget, colorVar } = tracker;
+  const target = capEnabled ? capTarget : goalTarget;
+  const over = capEnabled && count > capTarget;
+  const met = !capEnabled && goalEnabled && goalTarget > 0 && count >= goalTarget;
+  const barColor = over ? 'var(--status-critical)' : met ? 'var(--status-good)' : colorVar;
+  const pct = target ? Math.min(100, (count / target) * 100) : 0;
+
+  return el('div.stack.stack--2', {}, [
+    el('div.row.row--between', {}, [
+      el('span', { text: label, style: { 'font-weight': '550' } }),
+      el('span.text-sm.muted', { text: window ? fmtDate.range(window.start, window.end) : '' }),
+    ]),
+    el('div.share', {}, [
+      el('div.share__track', {}, [
+        el('div.share__fill', { style: { width: `${pct}%`, '--share-color': barColor } }),
+      ]),
+      el('span.share__pct', { text: target ? `${number(count)} / ${number(target)}` : number(count) }),
+    ]),
+    over ? el('p.stat__meta', { text: `${plural(count - capTarget, 'shift')} over the cap`, style: { color: 'var(--status-critical)' } }) : null,
+  ].filter(Boolean));
+}
+
+/** Progress toward every tracked goal/cap, for the period in progress right now. */
+function goalCard(result, rules, settings, range, now) {
+  const weekStart = settings?.weekStart;
+  const trackers = [];
+  const hasTracking = settings?.goalEnabled || settings?.capEnabled
+    || rules.some((rule) => rule.enabled && (rule.goalEnabled || rule.capEnabled));
+  if (!hasTracking) return null;
+
+  // The loaded `events` only cover the selected range, so if "now" falls
+  // outside it, the current period's count would be wrong (missing data), not
+  // just zero — say so instead of showing a misleading progress bar.
+  if (now < range.start || now > range.end) {
+    return el('div.card.card--pad.section', {}, [
+      el('div.chart-card__head', {}, [
+        el('div', {}, [
+          el('p.chart-card__title', { text: 'Goals & limits' }),
+          el('p.chart-card__sub', { text: 'This range doesn’t include today, so current progress can’t be shown.' }),
+        ]),
+      ]),
+      el('p.field__hint', { text: 'Pick a range that includes today to track the period in progress.' }),
+    ]);
+  }
+
+  if (settings?.goalEnabled || settings?.capEnabled) {
+    trackers.push(buildTracker({
+      label: 'Overall',
+      period: settings.period,
+      events: result.matchedEvents,
+      goalEnabled: settings.goalEnabled,
+      goalTarget: settings.goalTarget,
+      capEnabled: settings.capEnabled,
+      capTarget: settings.capTarget,
+      colorVar: 'var(--ink-2)',
+      now,
+      weekStart,
+    }));
+  }
+
+  for (const rule of rules) {
+    if (!rule.enabled || (!rule.goalEnabled && !rule.capEnabled)) continue;
+    const bucket = result.buckets.find((entry) => entry.rule.id === rule.id);
+    trackers.push(buildTracker({
+      label: rule.label,
+      period: rule.period,
+      events: bucket?.events || [],
+      goalEnabled: rule.goalEnabled,
+      goalTarget: rule.goalTarget,
+      capEnabled: rule.capEnabled,
+      capTarget: rule.capTarget,
+      colorVar: seriesColor(rule.color),
+      now,
+      weekStart,
+    }));
+  }
+
+  return el('div.card.card--pad.section', {}, [
+    el('div.chart-card__head', {}, [
+      el('div', {}, [
+        el('p.chart-card__title', { text: 'Goals & limits' }),
+        el('p.chart-card__sub', { text: 'Progress for the period in progress right now.' }),
+      ]),
+    ]),
+    el('div.stack.stack--4', { style: { 'margin-top': 'var(--s-3)' } }, trackers.map(trackerRow)),
+  ]);
+}
+
+/** Future periods over a cap, with their scheduled shifts as cancellation candidates. */
+function overcommitCard(result, rules, settings, range, now) {
+  const weekStart = settings?.weekStart;
+  const trackers = [];
+
+  if (settings?.capEnabled && settings.capTarget) {
+    trackers.push({ label: 'Overall', period: settings.period, cap: settings.capTarget, events: result.matchedEvents });
+  }
+  for (const rule of rules) {
+    if (!rule.enabled || !rule.capEnabled || !rule.capTarget) continue;
+    const bucket = result.buckets.find((entry) => entry.rule.id === rule.id);
+    trackers.push({ label: rule.label, period: rule.period, cap: rule.capTarget, events: bucket?.events || [] });
+  }
+
+  if (!trackers.length) return null;
+
+  const flagged = [];
+  for (const tracker of trackers) {
+    const windows = periodWindows(tracker.period, now, range.end, { weekStart });
+    for (const window of windows) {
+      const inWindow = tracker.events.filter((event) => event.start >= window.start && event.start <= window.end);
+      if (inWindow.length <= tracker.cap) continue;
+      const hasUpcoming = inWindow.some((event) => event.start >= now);
+      if (!hasUpcoming) continue; // already worked — nothing left to cancel
+      flagged.push({ label: tracker.label, window, cap: tracker.cap, total: inWindow.length });
+    }
+  }
+
+  const looksForward = range.end - now > 2 * 86_400_000;
+
+  if (!flagged.length) {
+    if (looksForward) return null; // nothing over any cap
+    return el('div.card.card--pad.section', {}, [
+      el('div.chart-card__head', {}, [
+        el('div', {}, [
+          el('p.chart-card__title', { text: 'Over-committed periods' }),
+          el('p.chart-card__sub', { text: 'No future shifts are loaded to check against your caps.' }),
+        ]),
+      ]),
+      el('p.field__hint', { text: 'Pick a date range that reaches further ahead — “Next 90 days”, say — to see this.' }),
+    ]);
+  }
+
+  flagged.sort((a, b) => a.window.start - b.window.start);
+
+  const table = el('table.table', {}, [
+    el('thead', {}, [
+      el('tr', {}, [
+        el('th', { text: 'Counter' }),
+        el('th', { text: 'Period' }),
+        el('th.num', { text: 'Scheduled' }),
+        el('th.num', { text: 'Cap' }),
+        el('th.num', { text: 'Over' }),
+      ]),
+    ]),
+    el('tbody', {}, flagged.map((flag) => el('tr', {}, [
+      el('td', { text: flag.label }),
+      el('td', { text: fmtDate.range(flag.window.start, flag.window.end) }),
+      el('td.num', { text: number(flag.total) }),
+      el('td.num', { text: number(flag.cap) }),
+      el('td.num', {}, [
+        el('strong', { text: `+${number(flag.total - flag.cap)}`, style: { color: 'var(--status-critical)' } }),
+      ]),
+    ]))),
+  ]);
+
+  return el('div.card.section', {}, [
+    el('div.card__head', {}, [
+      el('p.card__title', { text: 'Over-committed periods' }),
+      el('p.card__note', { text: 'Future periods over a cap, soonest first.' }),
+    ]),
+    el('div.card__body', {}, [el('div.table-wrap', {}, [table])]),
+  ]);
 }
 
 function timeChartCard(result, range, settings, teardowns) {

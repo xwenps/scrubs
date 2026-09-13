@@ -14,6 +14,9 @@
 
 .rules__mode { display: flex; flex-direction: column; gap: var(--s-2); flex: none; }
 
+.rules__goals { margin-bottom: var(--s-5); }
+.rules__goals .card__note { margin-top: 2px; margin-bottom: var(--s-4); }
+
 .rules__toolbar {
   display: flex;
   align-items: center;

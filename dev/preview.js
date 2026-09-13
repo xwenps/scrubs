@@ -18,7 +18,15 @@ import { renderLoginView } from '../js/ui/views/login-view.js';
 applyTheme(getTheme());
 qs('#theme-slot').append(createThemeToggle());
 
-const settings = { ...APP_CONFIG.fallbackSettings, calendarIds: ['demo@example.com'] };
+const settings = {
+  ...APP_CONFIG.fallbackSettings,
+  calendarIds: ['demo@example.com'],
+  goalEnabled: true,
+  goalTarget: 3,
+  capEnabled: true,
+  capTarget: 4,
+  period: { type: 'week' },
+};
 
 store.patch({
   status: 'signed-in',

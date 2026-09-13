@@ -12,6 +12,7 @@
  */
 import { compileRules } from './matcher.js';
 import { toISODate } from './date-range.js';
+import { blockDaySpan, blockHours } from './block.js';
 
 /**
  * @param {Array} events
@@ -35,36 +36,47 @@ export function countEvents(events, rules, options = {}) {
     days: new Set(),
   }));
 
-  const matchedEventIds = new Set();
+  const matchedById = new Map();
   const unmatchedTitles = new Map();
 
   for (const event of events) {
-    let matchedAny = false;
+    let representative = null;
 
     for (const bucket of buckets) {
       if (!bucket.rule.enabled || !bucket.matcher.ok) continue;
       if (!bucket.matcher.test(event)) continue;
 
-      matchedAny = true;
-      bucket.events.push(event);
+      // A block-mode counter's matches are one calendar event standing in for
+      // several daily shifts, so its raw duration is meaningless — credit
+      // days-spanned × hours/day instead. Every other counter keeps the
+      // event's actual duration, untouched.
+      const hours = bucket.rule.blockMode ? blockHours(event, bucket.rule.blockHoursPerDay) : (event.hours || 0);
+      const counted = hours === (event.hours || 0) ? event : { ...event, hours, rawHours: event.hours, blockDays: blockDaySpan(event) };
+
+      bucket.events.push(counted);
       bucket.total += 1;
-      bucket.hours += event.hours || 0;
+      bucket.hours += hours;
       bucket.days.add(toISODate(event.start));
       if (event.start < now) bucket.past += 1;
       else bucket.future += 1;
+      if (!representative) representative = counted;
 
       if (countMode === 'first') break;
     }
 
-    if (matchedAny) {
-      matchedEventIds.add(event.id);
+    if (representative) {
+      matchedById.set(event.id, representative);
     } else {
       const key = event.title || '(no title)';
       unmatchedTitles.set(key, (unmatchedTitles.get(key) || 0) + 1);
     }
   }
 
-  const matchedEvents = events.filter((event) => matchedEventIds.has(event.id));
+  // Rebuilt from the (possibly block-hours-adjusted) matched events rather than
+  // re-filtering `events`, so the override above survives into every consumer
+  // of `matchedEvents` (stats.js, the breakdown table, "coming up"). Order is
+  // preserved since `events` is already sorted by start.
+  const matchedEvents = events.map((event) => matchedById.get(event.id)).filter(Boolean);
   const totals = {
     total: matchedEvents.length,
     past: matchedEvents.filter((event) => event.start < now).length,

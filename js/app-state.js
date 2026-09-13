@@ -10,7 +10,7 @@ import { store } from './core/store.js';
 import { local, KEYS } from './core/storage.js';
 import { auth, SCOPES } from './services/auth.js';
 import { listCalendars, fetchEvents } from './services/calendar.js';
-import { loadConfig, saveConfig, rulesEqual } from './services/config-service.js';
+import { loadConfig, saveConfig, rulesEqual, settingsEqual } from './services/config-service.js';
 import { explainSheetError, extractSpreadsheetId } from './services/sheets.js';
 import { normalizeRule, createRuleId } from './domain/matcher.js';
 import { resolveRange, isValidPresetId } from './domain/date-range.js';
@@ -121,6 +121,7 @@ export async function initializeSession() {
     spreadsheetId,
     sheetTitle,
     settings,
+    settingsBaseline: settingsFromSheet ? settings : null,
     rules,
     rulesBaseline: rulesSource === 'sheet' ? rules : [],
     rulesSource,
@@ -191,14 +192,19 @@ export function setRules(rules) {
   store.patch({ rules: normalized });
 }
 
-export function rulesAreDirty() {
-  const { rules, rulesBaseline, rulesSource } = store.get();
-  if (rulesSource !== 'sheet' && rulesBaseline.length === 0) return rules.length > 0;
-  return !rulesEqual(rules, rulesBaseline);
+/** Whether the Rules page's "Save to sheet" button has anything to write —
+ * rules OR settings (goals/limits included) can each go stale independently. */
+export function configIsDirty() {
+  const { rules, rulesBaseline, rulesSource, settings, settingsBaseline } = store.get();
+  const rulesDirty = rulesSource !== 'sheet' && rulesBaseline.length === 0
+    ? rules.length > 0
+    : !rulesEqual(rules, rulesBaseline);
+  const settingsDirty = settingsBaseline ? !settingsEqual(settings, settingsBaseline) : true;
+  return rulesDirty || settingsDirty;
 }
 
-/** Write the current rules back to the config sheet, upgrading scope if needed. */
-export async function saveRulesToSheet() {
+/** Write the current rules and settings back to the config sheet, upgrading scope if needed. */
+export async function saveConfigToSheet() {
   const { spreadsheetId, rules, settings } = store.get();
   if (!spreadsheetId) {
     throw new Error('No config sheet is set for this session. Add one from the sign-in screen.');
@@ -210,7 +216,7 @@ export async function saveRulesToSheet() {
   }
 
   await saveConfig(spreadsheetId, { rules, settings });
-  store.patch({ rulesBaseline: rules, rulesSource: 'sheet' });
+  store.patch({ rulesBaseline: rules, rulesSource: 'sheet', settingsBaseline: settings });
 }
 
 /** Persist the current range as the deployment's default view. */
@@ -231,6 +237,7 @@ export async function saveDefaultRange(descriptor) {
   if (!granted) return { savedToSheet: false };
 
   await saveConfig(spreadsheetId, { settings: nextSettings });
+  store.patch({ settingsBaseline: nextSettings });
   return { savedToSheet: true };
 }
 
@@ -252,6 +259,7 @@ export async function signOut() {
     eventsStatus: 'idle',
     rules: [],
     rulesBaseline: [],
+    settingsBaseline: null,
     calendars: [],
   });
 }

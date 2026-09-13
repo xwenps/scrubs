@@ -10,7 +10,6 @@ import { date as fmtDate } from '../../core/format.js';
 
 /**
  * @param {{value: {preset: string, start?: string, end?: string},
- *          isDefault?: boolean,
  *          onChange: (next) => void,
  *          onSetDefault?: (next) => void,
  *          options?: object}} config
@@ -18,6 +17,24 @@ import { date as fmtDate } from '../../core/format.js';
 export function createDateRangePicker(config) {
   let value = { ...config.value };
   let closePopover = null;
+
+  /** Whether `value` is exactly the deployment's saved default — recomputed
+   * live (not cached) so it stays correct as the range or the default change. */
+  function isCurrentDefault() {
+    const options = config.options || {};
+    if (!options.defaultRange) return false;
+    if (value.preset !== options.defaultRange) return false;
+    if (value.preset !== 'custom') return true;
+    return value.start === options.defaultRangeStart && value.end === options.defaultRangeEnd;
+  }
+
+  function defaultDescriptor() {
+    const options = config.options || {};
+    if (options.defaultRange === 'custom') {
+      return { preset: 'custom', start: options.defaultRangeStart, end: options.defaultRangeEnd };
+    }
+    return { preset: options.defaultRange };
+  }
 
   const button = el('button.btn.dash__range-btn', {
     type: 'button',
@@ -112,11 +129,16 @@ export function createDateRangePicker(config) {
 
     if (config.onSetDefault) {
       panel.append(el('div.popover__divider'));
-      panel.append(el('div.popover__foot', {}, [
+      panel.append(el('div.popover__foot.row.row--tight', {}, isCurrentDefault() ? [
         el('button.link-btn.text-sm', {
           type: 'button',
-          text: config.isDefault ? '✓ This is your default view' : 'Make this my default view',
-          disabled: Boolean(config.isDefault),
+          text: '✓ This is your default view',
+          disabled: true,
+        }),
+      ] : [
+        el('button.link-btn.text-sm', {
+          type: 'button',
+          text: 'Make this my default view',
           on: {
             click: () => {
               config.onSetDefault(value);
@@ -124,6 +146,11 @@ export function createDateRangePicker(config) {
             },
           },
         }),
+        config.options?.defaultRange ? el('button.link-btn.text-sm', {
+          type: 'button',
+          text: 'View default',
+          on: { click: () => commit(defaultDescriptor()) },
+        }) : null,
       ]));
     }
 
@@ -146,8 +173,9 @@ export function createDateRangePicker(config) {
       refreshButton();
       if (!silent) config.onChange(resolveRange(value, config.options));
     },
-    setDefaultFlag(isDefault) {
-      config.isDefault = isDefault;
+    setOptions(next) {
+      config.options = next;
+      refreshButton();
     },
     destroy: close,
   };

@@ -17,6 +17,10 @@ let state = {
   profile: null,
   spreadsheetId: '',
   settings: null,
+  /** Settings as they were last read from / written to the sheet, for dirty checks.
+   * `null` means there is no sheet-confirmed copy yet (no sheet, or its Settings tab
+   * was never read), so any local settings should be treated as unsaved. */
+  settingsBaseline: null,
   rules: [],
   /** Rules as they were last read from / written to the sheet, for dirty checks. */
   rulesBaseline: [],

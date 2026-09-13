@@ -11,9 +11,11 @@
  *
  *   {
  *     id, label, field, matchType, value,
- *     caseSensitive, wholeWord, normalizeSpace, enabled, color
+ *     caseSensitive, wholeWord, normalizeSpace, enabled, color,
+ *     blockMode, blockHoursPerDay, period, goalEnabled, goalTarget, capEnabled, capTarget
  *   }
  */
+import { normalizePeriod } from './period.js';
 
 export const FIELDS = [
   { id: 'title', label: 'title', pick: (event) => event.title },
@@ -116,6 +118,13 @@ export function normalizeRule(rule = {}) {
     normalizeSpace: rule.normalizeSpace === undefined ? true : Boolean(rule.normalizeSpace),
     enabled: rule.enabled === undefined ? true : Boolean(rule.enabled),
     color: clampColorSlot(rule.color),
+    blockMode: Boolean(rule.blockMode),
+    blockHoursPerDay: Math.max(0, Number(rule.blockHoursPerDay) || 0),
+    period: normalizePeriod(rule.period),
+    goalEnabled: Boolean(rule.goalEnabled),
+    goalTarget: Math.max(0, Math.round(Number(rule.goalTarget)) || 0),
+    capEnabled: Boolean(rule.capEnabled),
+    capTarget: Math.max(0, Math.round(Number(rule.capTarget)) || 0),
   };
 }
 

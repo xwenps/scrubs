@@ -60,13 +60,45 @@ export function makeEvents({ months = 14, seed = 7 } = {}) {
     });
   }
 
+  // A multi-day "block" entry — one calendar event standing in for many daily
+  // shifts — to exercise block-mode hours math in the preview. Raw `hours` is
+  // what calendar.js would compute from the duration alone (huge, and wrong);
+  // the block-mode counter below overrides it with days-spanned × hours/day.
+  const blockStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 3, 7, 0, 0, 0);
+  const blockEnd = new Date(blockStart.getTime() + 14 * 24 * 3_600_000);
+  events.push({
+    id: 'demo-block-0',
+    calendarId: 'demo@example.com',
+    calendarName: 'Demo roster',
+    title: 'HP6 Block',
+    description: '',
+    location: 'Ward 6',
+    start: blockStart,
+    end: blockEnd,
+    allDay: false,
+    hours: Math.max(0, (blockEnd - blockStart) / 3_600_000),
+    htmlLink: '',
+    status: 'confirmed',
+    rawStartDate: null,
+    rawEndDate: null,
+  });
+
   return events;
 }
 
 export const demoRules = [
-  { label: 'HP6 mornings', matchType: 'exact', value: 'HP6 AM', color: 1 },
+  {
+    label: 'HP6 mornings', matchType: 'exact', value: 'HP6 AM', color: 1,
+    goalEnabled: true, goalTarget: 12, period: { type: 'month' },
+  },
   { label: 'HP6 afternoons', matchType: 'exact', value: 'HP6 PM', color: 2 },
   { label: 'HP6 nights', matchType: 'contains', value: 'Night', color: 3 },
   { label: 'HP7 cover', matchType: 'startsWith', value: 'HP7', color: 4 },
   { label: 'Clinics', matchType: 'contains', value: 'Clinic', color: 5 },
+  {
+    label: 'HP6 block (multi-day)', matchType: 'exact', value: 'HP6 Block', color: 6,
+    blockMode: true, blockHoursPerDay: 8,
+    goalEnabled: true, goalTarget: 10, capEnabled: true, capTarget: 12,
+    period: { type: 'biweek', anchor: '' },
+  },
 ].map((rule, index) => normalizeRule({ ...rule, id: `demo-rule-${index}` }));

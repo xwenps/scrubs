@@ -10,10 +10,12 @@ import { loadTemplate, qs, el, clear } from '../../core/dom.js';
 import { store } from '../../core/store.js';
 import { countEvents } from '../../domain/counter.js';
 import { describeRule, normalizeRule, createRuleId } from '../../domain/matcher.js';
+import { currentWindow } from '../../domain/period.js';
 import { createRuleEditor } from '../components/rule-editor.js';
+import { createPeriodPicker } from '../components/period-picker.js';
 import { seriesColor, nextFreeSlot } from '../palette.js';
 import { number, plural } from '../../core/format.js';
-import { setRules, saveRulesToSheet, rulesAreDirty, updateSettings } from '../../app-state.js';
+import { setRules, saveConfigToSheet, configIsDirty, updateSettings } from '../../app-state.js';
 import { notify } from '../components/toast.js';
 
 export async function renderRulesView(mount) {
@@ -26,12 +28,80 @@ export async function renderRulesView(mount) {
   const syncText = qs('[data-sync-text]', root);
   const unmatchedSection = qs('[data-unmatched]', root);
   const unmatchedList = qs('[data-unmatched-list]', root);
+  const goalsHost = qs('[data-goals-slot]', root);
 
   /** id of the rule currently expanded for editing */
   let editingId = null;
   let activeEditor = null;
   /** the rule as it was the moment its editor opened, so "discard" has something to restore */
   let editingSnapshot = null;
+  let goalsPeriodPicker = null;
+
+  /* ---- overall goals & limits ---------------------------------------------
+   * One period drives both the overall goal and the overall cap, same as on a
+   * counter — rebuilt on every render since it's bound to `settings`, which
+   * already re-renders the whole page on change (see the `settings`-watched
+   * subscription at the bottom of this file). */
+
+  function renderGoalsSection() {
+    goalsPeriodPicker?.destroy();
+    clear(goalsHost);
+
+    const settings = store.select('settings') || {};
+
+    goalsPeriodPicker = createPeriodPicker({
+      value: settings.period,
+      onChange: (period) => updateSettings({ period }),
+    });
+
+    const goalTargetInput = el('input.input', {
+      type: 'number',
+      min: '0',
+      step: '1',
+      value: settings.goalTarget || '',
+      style: { 'max-width': '100px' },
+      hidden: !settings.goalEnabled,
+      'aria-label': 'Overall goal — shifts per period',
+      on: { change: () => updateSettings({ goalTarget: Math.max(0, Math.round(Number(goalTargetInput.value)) || 0) }) },
+    });
+    const goalToggle = el('label.check', {}, [
+      el('input', {
+        type: 'checkbox',
+        checked: settings.goalEnabled,
+        on: { change: (event) => updateSettings({ goalEnabled: event.target.checked }) },
+      }),
+      'Track an overall goal (minimum shifts per period)',
+    ]);
+
+    const capTargetInput = el('input.input', {
+      type: 'number',
+      min: '0',
+      step: '1',
+      value: settings.capTarget || '',
+      style: { 'max-width': '100px' },
+      hidden: !settings.capEnabled,
+      'aria-label': 'Overall cap — shifts per period',
+      on: { change: () => updateSettings({ capTarget: Math.max(0, Math.round(Number(capTargetInput.value)) || 0) }) },
+    });
+    const capToggle = el('label.check', {}, [
+      el('input', {
+        type: 'checkbox',
+        checked: settings.capEnabled,
+        on: { change: (event) => updateSettings({ capEnabled: event.target.checked }) },
+      }),
+      'Track an overall cap (maximum shifts per period, for cancellation planning)',
+    ]);
+
+    goalsHost.append(
+      el('p.card__title', { text: 'Goals & limits' }),
+      el('p.card__note', { text: 'Tracked across every counter combined. A counter can also set its own, on its card.' }),
+      goalsPeriodPicker.element,
+      el('div.stack.stack--2', { style: { 'margin-top': 'var(--s-3)' } }, [
+        el('div.row.row--tight', {}, [goalToggle, goalTargetInput]),
+        el('div.row.row--tight', {}, [capToggle, capTargetInput]),
+      ]),
+    );
+  }
 
   /* ---- counting mode ----------------------------------------------------- */
 
@@ -75,7 +145,7 @@ export async function renderRulesView(mount) {
   saveButton.addEventListener('click', async () => {
     saveButton.classList.add('is-busy');
     try {
-      await saveRulesToSheet();
+      await saveConfigToSheet();
       notify.success('Saved to your config sheet', 'Everyone using this sheet will pick up the change.');
       renderSyncState();
     } catch (error) {
@@ -121,23 +191,25 @@ export async function renderRulesView(mount) {
   });
 
   qs('[data-action="revert"]', root).addEventListener('click', () => {
-    const baseline = store.select('rulesBaseline');
-    if (!baseline.length) {
-      notify.warning('Nothing to revert to', 'These counters have never been read from a sheet.');
+    const rulesBaseline = store.select('rulesBaseline');
+    const settingsBaseline = store.select('settingsBaseline');
+    if (!rulesBaseline.length && !settingsBaseline) {
+      notify.warning('Nothing to revert to', 'These counters and settings have never been read from a sheet.');
       return;
     }
-    setRules(baseline);
+    if (rulesBaseline.length) setRules(rulesBaseline);
+    if (settingsBaseline) updateSettings(settingsBaseline);
     editingId = null;
     editingSnapshot = null;
     render();
-    notify.info('Reverted', 'Counters restored to the last version read from the sheet.');
+    notify.info('Reverted', 'Counters and settings restored to the last version read from the sheet.');
   });
 
   /* ---- rendering --------------------------------------------------------- */
 
   function renderSyncState() {
     const source = store.select('rulesSource');
-    const dirty = rulesAreDirty();
+    const dirty = configIsDirty();
     syncState.dataset.dirty = String(dirty);
 
     syncState.dataset.sheet = store.select('spreadsheetId') ? 'yes' : 'none';
@@ -182,6 +254,7 @@ export async function renderRulesView(mount) {
     renderUnmatched(result);
     renderSyncState();
     syncModeButtons();
+    renderGoalsSection();
   }
 
   function ruleCard({ rule, index, rules, bucket, events }) {
@@ -205,6 +278,7 @@ export async function renderRulesView(mount) {
       el('div.rule__count', {}, [
         el('strong', { text: number(bucket?.total || 0) }),
         el('span', { text: events.length ? 'matches' : 'no data yet' }),
+        trackingChip(rule, bucket),
       ]),
       el('div.rule__actions', {}, [
         el('label.switch', { title: rule.enabled ? 'Counter is on' : 'Counter is off' }, [
@@ -254,6 +328,7 @@ export async function renderRulesView(mount) {
       activeEditor = createRuleEditor({
         rule,
         events,
+        settings: store.select('settings'),
         onChange: (next) => {
           const current = store.select('rules');
           const updated = current.map((entry) => (entry.id === rule.id ? next : entry));
@@ -364,7 +439,29 @@ export async function renderRulesView(mount) {
   return () => {
     unsubscribe();
     activeEditor?.destroy();
+    goalsPeriodPicker?.destroy();
   };
+}
+
+/** Small "N / target this period" chip for a counter's collapsed summary row. */
+function trackingChip(rule, bucket) {
+  if (!rule.capEnabled && !rule.goalEnabled) return null;
+
+  const window = currentWindow(rule.period, new Date(), { weekStart: store.select('settings')?.weekStart });
+  const events = bucket?.events || [];
+  const count = window ? events.filter((event) => event.start >= window.start && event.start <= window.end).length : 0;
+
+  if (rule.capEnabled) {
+    const over = count > rule.capTarget;
+    return el(`span.chip${over ? '.chip--warning' : '.chip--good'}`, {
+      text: `${number(count)} / ${number(rule.capTarget)} cap this period`,
+    });
+  }
+
+  const met = count >= rule.goalTarget && rule.goalTarget > 0;
+  return el(`span.chip${met ? '.chip--good' : ''}`, {
+    text: `${number(count)} / ${number(rule.goalTarget)} this period`,
+  });
 }
 
 function iconButton(label, path, disabled, onClick) {
