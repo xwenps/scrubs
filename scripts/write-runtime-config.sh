@@ -24,6 +24,8 @@ window.__SCRUBS_CONFIG__ = {
   "settingsTab": "$(esc "${SCRUBS_SETTINGS_TAB:-Settings}")",
   "rulesTab": "$(esc "${SCRUBS_RULES_TAB:-Rules}")",
   "defaultRange": "$(esc "${SCRUBS_DEFAULT_RANGE:-last12months}")",
+  "defaultRangeStart": "$(esc "${SCRUBS_DEFAULT_RANGE_START:-}")",
+  "defaultRangeEnd": "$(esc "${SCRUBS_DEFAULT_RANGE_END:-}")",
   "defaultCalendarIds": "$(esc "${SCRUBS_DEFAULT_CALENDAR_IDS:-primary}")",
   "countMode": "$(esc "${SCRUBS_COUNT_MODE:-first}")",
   "weekStart": "$(esc "${SCRUBS_WEEK_START:-monday}")",

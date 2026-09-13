@@ -22,9 +22,9 @@ environment variables (see [.env.example](../.env.example)).
 | Key | Values | Default | What it does |
 |---|---|---|---|
 | `defaultRange` | a preset id (below) or `custom` | `last12months` | **The default view preference.** Which date range the dashboard opens on. |
-| `defaultRangeStart` | `YYYY-MM-DD` | — | Only read when `defaultRange` is `custom`. |
-| `defaultRangeEnd` | `YYYY-MM-DD` | — | Only read when `defaultRange` is `custom`. |
-| `calendarIds` | comma-separated calendar IDs, or `primary` | `primary` | Which calendars to count by default. Users can change this in the toolbar. |
+| `defaultRangeStart` | a date, or `YYYY-MM-DD` text | — | Required when `defaultRange` is `custom` — without both dates the range is ignored. |
+| `defaultRangeEnd` | a date, or `YYYY-MM-DD` text | — | Required when `defaultRange` is `custom` — without both dates the range is ignored. |
+| `calendarIds` | comma-separated calendar IDs, or `primary` | `primary` | **The default calendar selection.** Which calendars the dashboard opens on. Users can change this in the toolbar. |
 | `countMode` | `first` or `all` | `first` | `first`: an event is counted once, by the first matching counter (order matters). `all`: counted by every counter it matches. |
 | `weekStart` | `monday` or `sunday` | `monday` | Affects weekly buckets, the weekday chart and the heatmap rows. |
 | `defaultHoursPerShift` | number | `0` | Hours credited to an **all-day** event. Timed events always use their real duration. |
@@ -37,13 +37,23 @@ environment variables (see [.env.example](../.env.example)).
 
 A user's last-used range is remembered in their browser and takes precedence
 over `defaultRange` on their next visit. Choosing **Make this my default view**
-in the date picker writes `defaultRange` back to this sheet for everybody.
+in the date picker writes `defaultRange` back to this sheet for everybody; the
+calendar picker's **Make these my default calendars** does the same for
+`calendarIds`. Both pickers also offer **View default**, which returns to what
+the sheet says.
+
+### Dates in `defaultRangeStart` / `defaultRangeEnd`
+
+Type them however Sheets lets you. A cell Sheets recognises as a real date works,
+and so does plain text in `YYYY-MM-DD` form — both are read as the same day.
 
 ### Example
 
 | Key | Value |
 |---|---|
-| defaultRange | ytd |
+| defaultRange | custom |
+| defaultRangeStart | 2026-07-01 |
+| defaultRangeEnd | 2027-06-30 |
 | calendarIds | primary, rota@hospital.example |
 | countMode | first |
 | weekStart | monday |

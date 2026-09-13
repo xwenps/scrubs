@@ -2,11 +2,24 @@
 import { el, qs, onDismiss } from '../../core/dom.js';
 
 /**
- * @param {{calendars: Array<{id, summary, primary}>, selected: string[], onChange: (ids: string[]) => void}} config
+ * @param {{calendars: Array<{id, summary, primary}>,
+ *          selected: string[],
+ *          defaultIds?: string[],
+ *          onChange: (ids: string[]) => void,
+ *          onSetDefault?: (ids: string[]) => void}} config
  */
 export function createCalendarPicker(config) {
   let selected = new Set(config.selected);
   let close = null;
+
+  /** Whether the selection is exactly the deployment's saved default — order
+   * does not matter, only membership. Recomputed live, never cached. */
+  function isCurrentDefault() {
+    const defaults = config.defaultIds || [];
+    if (!defaults.length) return false;
+    if (defaults.length !== selected.size) return false;
+    return defaults.every((id) => selected.has(id));
+  }
 
   const button = el('button.btn', {
     type: 'button',
@@ -33,15 +46,22 @@ export function createCalendarPicker(config) {
 
   function open() {
     const panel = el('div.popover', {
+      style: { 'inset-inline-start': '0', top: 'calc(100% + 6px)', 'max-width': 'min(320px, calc(100vw - 32px))' },
+    });
+
+    // The options are their own listbox so the footer's buttons are not stray
+    // children of one, and so a long calendar list scrolls without taking the
+    // "make this the default" action off-screen with it.
+    const list = el('div', {
       role: 'listbox',
       'aria-multiselectable': 'true',
       'aria-label': 'Calendars to include',
-      style: { 'inset-inline-start': '0', top: 'calc(100% + 6px)', 'max-height': '320px', 'overflow-y': 'auto', 'max-width': 'min(320px, calc(100vw - 32px))' },
+      style: { 'max-height': '320px', 'overflow-y': 'auto' },
     });
 
     for (const calendar of config.calendars) {
       const isOn = selected.has(calendar.id);
-      panel.append(el('button.popover__option', {
+      list.append(el('button.popover__option', {
         type: 'button',
         role: 'option',
         'aria-checked': String(isOn),
@@ -64,6 +84,42 @@ export function createCalendarPicker(config) {
         el('span.popover__check', { text: isOn ? '✓' : '' }),
         el('span.swatch', { style: { '--swatch': calendar.backgroundColor || 'var(--ink-3)' } }),
         el('span.truncate', { text: calendar.summary }),
+      ]));
+    }
+
+    panel.append(list);
+
+    if (config.onSetDefault) {
+      panel.append(el('div.popover__divider'));
+      panel.append(el('div.popover__foot.row.row--tight', {}, isCurrentDefault() ? [
+        el('button.link-btn.text-sm', {
+          type: 'button',
+          text: '✓ These are your default calendars',
+          disabled: true,
+        }),
+      ] : [
+        el('button.link-btn.text-sm', {
+          type: 'button',
+          text: 'Make these my default calendars',
+          on: {
+            click: () => {
+              config.onSetDefault([...selected]);
+              dismiss();
+            },
+          },
+        }),
+        config.defaultIds?.length ? el('button.link-btn.text-sm', {
+          type: 'button',
+          text: 'View default',
+          on: {
+            click: () => {
+              selected = new Set(config.defaultIds);
+              refresh();
+              config.onChange([...selected]);
+              dismiss();
+            },
+          },
+        }) : null,
       ]));
     }
 

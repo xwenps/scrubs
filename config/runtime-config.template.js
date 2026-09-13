@@ -16,6 +16,8 @@ window.__SCRUBS_CONFIG__ = {
   settingsTab: 'Settings',
   rulesTab: 'Rules',
   defaultRange: 'last12months',
+  defaultRangeStart: '',
+  defaultRangeEnd: '',
   defaultCalendarIds: 'primary',
   countMode: 'first',
   weekStart: 'monday',

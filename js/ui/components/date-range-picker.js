@@ -5,7 +5,7 @@
  * view, which is what the `defaultRange` key in the config sheet stores.
  */
 import { el, qs, onDismiss } from '../../core/dom.js';
-import { RANGE_PRESETS, PRESET_GROUPS, resolveRange } from '../../domain/date-range.js';
+import { RANGE_PRESETS, PRESET_GROUPS, resolveRange, defaultDescriptor } from '../../domain/date-range.js';
 import { date as fmtDate } from '../../core/format.js';
 
 /**
@@ -26,14 +26,6 @@ export function createDateRangePicker(config) {
     if (value.preset !== options.defaultRange) return false;
     if (value.preset !== 'custom') return true;
     return value.start === options.defaultRangeStart && value.end === options.defaultRangeEnd;
-  }
-
-  function defaultDescriptor() {
-    const options = config.options || {};
-    if (options.defaultRange === 'custom') {
-      return { preset: 'custom', start: options.defaultRangeStart, end: options.defaultRangeEnd };
-    }
-    return { preset: options.defaultRange };
   }
 
   const button = el('button.btn.dash__range-btn', {
@@ -149,7 +141,7 @@ export function createDateRangePicker(config) {
         config.options?.defaultRange ? el('button.link-btn.text-sm', {
           type: 'button',
           text: 'View default',
-          on: { click: () => commit(defaultDescriptor()) },
+          on: { click: () => commit(defaultDescriptor(config.options || {})) },
         }) : null,
       ]));
     }

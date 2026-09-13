@@ -8,7 +8,7 @@
 import { store } from '../js/core/store.js';
 import { qs } from '../js/core/dom.js';
 import { applyTheme, getTheme, createThemeToggle } from '../js/ui/components/theme-toggle.js';
-import { resolveRange } from '../js/domain/date-range.js';
+import { resolveRange, defaultDescriptor } from '../js/domain/date-range.js';
 import { APP_CONFIG } from '../config/app.config.js';
 import { makeEvents, demoRules } from './fixtures.js';
 import { renderDashboardView } from '../js/ui/views/dashboard-view.js';
@@ -30,7 +30,7 @@ store.patch({
   rulesSource: 'sheet',
   calendars: [{ id: 'demo@example.com', summary: 'Demo roster', primary: true }],
   selectedCalendarIds: ['demo@example.com'],
-  range: resolveRange({ preset: settings.defaultRange }, settings),
+  range: resolveRange(defaultDescriptor(settings), settings),
   events: makeEvents(),
   eventsStatus: 'ready',
 });

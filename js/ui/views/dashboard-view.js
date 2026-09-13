@@ -16,7 +16,7 @@ import { foldSeries, seriesColor, seqColor } from '../palette.js';
 import { createDateRangePicker } from '../components/date-range-picker.js';
 import { createCalendarPicker } from '../components/calendar-picker.js';
 import { number, decimal, percent, hours as fmtHours, date as fmtDate, plural } from '../../core/format.js';
-import { setRange, setCalendars, loadEvents, saveDefaultRange, sheetUrl } from '../../app-state.js';
+import { setRange, setCalendars, loadEvents, saveDefaultRange, saveDefaultCalendars, resolveCalendarIds, sheetUrl } from '../../app-state.js';
 import { notify } from '../components/toast.js';
 
 export async function renderDashboardView(mount) {
@@ -34,7 +34,10 @@ export async function renderDashboardView(mount) {
 
   /* ---- toolbar ----------------------------------------------------------- */
 
-  const rangePicker = createDateRangePicker({
+  // Held in a variable so the saved default can be written back onto it: the
+  // pickers read their options on every open, so the footer stays truthful
+  // without rebuilding the toolbar.
+  const rangeConfig = {
     value: { preset: state.range?.preset || 'last12months', start: state.range?.startISO, end: state.range?.endISO },
     options: state.settings || {},
     onChange: (resolved) => setRange(resolved),
@@ -45,6 +48,7 @@ export async function renderDashboardView(mount) {
           start: descriptor.start,
           end: descriptor.end,
         });
+        rangeConfig.options = store.get().settings || {};
         notify.success(
           'Default view updated',
           savedToSheet ? 'Saved to your configuration sheet.' : 'Saved in this browser — no writable config sheet is connected.',
@@ -53,16 +57,32 @@ export async function renderDashboardView(mount) {
         notify.error('Could not save the default view', error.message);
       }
     },
-  });
+  };
+  const rangePicker = createDateRangePicker(rangeConfig);
   qs('[data-range-slot]', root).append(rangePicker.element);
   teardowns.push(() => rangePicker.destroy());
 
   if (state.calendars?.length > 1) {
-    const calendarPicker = createCalendarPicker({
+    const calendarConfig = {
       calendars: state.calendars,
       selected: state.selectedCalendarIds,
+      // The sheet may say `primary`; compare against the id that actually is.
+      defaultIds: resolveCalendarIds(state.settings?.calendarIds, state.calendars),
       onChange: (ids) => setCalendars(ids),
-    });
+      onSetDefault: async (ids) => {
+        try {
+          const { savedToSheet } = await saveDefaultCalendars(ids);
+          calendarConfig.defaultIds = resolveCalendarIds(store.get().settings?.calendarIds, state.calendars);
+          notify.success(
+            'Default calendars updated',
+            savedToSheet ? 'Saved to your configuration sheet.' : 'Saved in this browser — no writable config sheet is connected.',
+          );
+        } catch (error) {
+          notify.error('Could not save the default calendars', error.message);
+        }
+      },
+    };
+    const calendarPicker = createCalendarPicker(calendarConfig);
     qs('[data-calendar-slot]', root).append(calendarPicker.element);
     teardowns.push(() => calendarPicker.destroy());
   } else if (!state.calendars?.length && state.selectedCalendarIds?.length) {

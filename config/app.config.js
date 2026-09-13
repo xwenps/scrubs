@@ -78,6 +78,9 @@ export const APP_CONFIG = Object.freeze({
    */
   fallbackSettings: Object.freeze({
     defaultRange: value('defaultRange', 'last12months'),
+    /** Only meaningful when defaultRange is `custom`. Both are `YYYY-MM-DD`. */
+    defaultRangeStart: value('defaultRangeStart'),
+    defaultRangeEnd: value('defaultRangeEnd'),
     calendarIds: value('defaultCalendarIds', 'primary'),
     countMode: value('countMode', 'first') === 'all' ? 'all' : 'first',
     weekStart: value('weekStart', 'monday') === 'sunday' ? 'sunday' : 'monday',

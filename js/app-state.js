@@ -13,7 +13,7 @@ import { listCalendars, fetchEvents } from './services/calendar.js';
 import { loadConfig, saveConfig, rulesEqual } from './services/config-service.js';
 import { explainSheetError, extractSpreadsheetId } from './services/sheets.js';
 import { normalizeRule, createRuleId } from './domain/matcher.js';
-import { resolveRange, isValidPresetId } from './domain/date-range.js';
+import { resolveRange, isValidPresetId, defaultDescriptor } from './domain/date-range.js';
 import { notify } from './ui/components/toast.js';
 
 let loadController = null;
@@ -33,6 +33,18 @@ export function setSpreadsheetOverride(value) {
 
 export function sheetUrl(id = currentSpreadsheetId()) {
   return id ? APP_CONFIG.sheetUrlTemplate.replace('{id}', id) : '';
+}
+
+/**
+ * Configured calendar ids → ids that actually exist in this account.
+ * `primary` is a placeholder the sheet may use, so it is resolved against the
+ * real calendar list; anything the account cannot see is dropped.
+ */
+export function resolveCalendarIds(ids, calendars = []) {
+  const available = new Set(calendars.map((calendar) => calendar.id));
+  return (ids || [])
+    .map((id) => (id === 'primary' ? (calendars.find((calendar) => calendar.primary)?.id || 'primary') : id))
+    .filter((id) => available.size === 0 || available.has(id));
 }
 
 function starterRules() {
@@ -102,20 +114,23 @@ export async function initializeSession() {
     notify.error('Could not list your calendars', error.message);
   }
 
-  const available = new Set(calendars.map((calendar) => calendar.id));
   const stored = local.get(KEYS.selectedCalendars, null);
-  const preferred = (Array.isArray(stored) && stored.length ? stored : settings.calendarIds || ['primary'])
-    .map((id) => (id === 'primary' ? (calendars.find((calendar) => calendar.primary)?.id || 'primary') : id))
-    .filter((id) => available.size === 0 || available.has(id));
+  const preferred = resolveCalendarIds(
+    Array.isArray(stored) && stored.length ? stored : settings.calendarIds || ['primary'],
+    calendars,
+  );
 
   const selectedCalendarIds = preferred.length
     ? preferred
     : [calendars.find((calendar) => calendar.primary)?.id || calendars[0]?.id].filter(Boolean);
 
+  // This browser's last-used range wins over the sheet's default, but only if it
+  // is actually resolvable — a half-written custom range falls back to the sheet.
   const storedRange = local.get(KEYS.lastRange, null);
-  const rangeDescriptor = storedRange && isValidPresetId(storedRange.preset)
-    ? storedRange
-    : { preset: settings.defaultRange };
+  const storedIsUsable = Boolean(storedRange)
+    && isValidPresetId(storedRange.preset)
+    && (storedRange.preset !== 'custom' || (storedRange.start && storedRange.end));
+  const rangeDescriptor = storedIsUsable ? storedRange : defaultDescriptor(settings);
 
   store.patch({
     spreadsheetId,
@@ -222,6 +237,26 @@ export async function saveDefaultRange(descriptor) {
     defaultRangeStart: descriptor.preset === 'custom' ? descriptor.start : '',
     defaultRangeEnd: descriptor.preset === 'custom' ? descriptor.end : '',
   };
+  store.patch({ settings: nextSettings });
+  local.set(KEYS.localSettings, nextSettings);
+
+  if (!spreadsheetId) return { savedToSheet: false };
+
+  const granted = await auth.requestScope(SCOPES.sheetsWrite);
+  if (!granted) return { savedToSheet: false };
+
+  await saveConfig(spreadsheetId, { settings: nextSettings });
+  return { savedToSheet: true };
+}
+
+/**
+ * Persist the current calendar selection as the deployment's default.
+ * The mirror image of `saveDefaultRange`: the toolbar's other control also
+ * deserves a way to say "this is what the dashboard should open on".
+ */
+export async function saveDefaultCalendars(ids) {
+  const { spreadsheetId, settings } = store.get();
+  const nextSettings = { ...settings, calendarIds: [...ids] };
   store.patch({ settings: nextSettings });
   local.set(KEYS.localSettings, nextSettings);
 

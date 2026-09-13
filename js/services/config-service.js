@@ -16,7 +16,7 @@
 import { APP_CONFIG } from '../../config/app.config.js';
 import { batchGetValues, getSheetNames, ensureTab, replaceValues } from './sheets.js';
 import { normalizeRule, createRuleId, MATCH_TYPES, clampColorSlot } from '../domain/matcher.js';
-import { isValidPresetId } from '../domain/date-range.js';
+import { isValidPresetId, toISODate } from '../domain/date-range.js';
 
 const RULE_HEADERS = ['Label', 'Field', 'Match type', 'Value', 'Case sensitive', 'Whole word', 'Enabled', 'Colour', 'ID'];
 
@@ -46,6 +46,32 @@ const FIELD_ALIASES = new Map(Object.entries({
 
 function slug(value) {
   return String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+}
+
+/**
+ * A date cell → `YYYY-MM-DD`, or '' when there is nothing usable there.
+ *
+ * Values come back with `UNFORMATTED_VALUE`, so a cell Sheets recognised as a
+ * date arrives as a *serial number* (days since 1899-12-30) rather than the
+ * text that was typed into it. Someone typing `2026-07-01` into the Settings
+ * tab sees an ISO date and reasonably expects it to be read as one, so accept
+ * both that serial and plain ISO text.
+ */
+function toSheetDate(value) {
+  if (value === undefined || value === null || value === '') return '';
+  if (value instanceof Date) return Number.isNaN(value.getTime()) ? '' : toISODate(value);
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    // Sheets' epoch: serial 0 is 1899-12-30. Times are the fractional part.
+    const date = new Date(1899, 11, 30 + Math.floor(value));
+    return Number.isNaN(date.getTime()) ? '' : toISODate(date);
+  }
+
+  const text = String(value).trim();
+  const iso = /^(\d{4})-(\d{2})-(\d{2})/.exec(text);          // also trims a time suffix
+  if (iso) return `${iso[1]}-${iso[2]}-${iso[3]}`;
+  if (/^\d+(\.\d+)?$/.test(text)) return toSheetDate(Number(text)); // serial stored as text
+  return '';
 }
 
 function toBool(value, fallback = false) {
@@ -93,14 +119,26 @@ export function parseSettings(rows) {
   }
 
   const fallback = APP_CONFIG.fallbackSettings;
-  const defaultRange = String(raw.defaultrange ?? raw.defaultview ?? raw.defaultdaterange ?? '').trim();
+  const requested = String(raw.defaultrange ?? raw.defaultview ?? raw.defaultdaterange ?? '').trim();
   const countMode = slug(raw.countmode ?? raw.counting ?? '');
   const weekStart = slug(raw.weekstart ?? raw.weekstartson ?? '');
 
+  // When the sheet names no range at all, the deployment's fallback supplies the
+  // dates too — otherwise a `custom` fallback would have nothing to resolve.
+  const fromSheet = isValidPresetId(requested);
+  const rangeStart = toSheetDate(raw.defaultrangestart) || (fromSheet ? '' : fallback.defaultRangeStart || '');
+  const rangeEnd = toSheetDate(raw.defaultrangeend) || (fromSheet ? '' : fallback.defaultRangeEnd || '');
+
+  // A `custom` default is only usable with both of its dates. Without them there
+  // is nothing to resolve, so drop to a real preset rather than quietly showing
+  // an arbitrary window nobody asked for.
+  let defaultRange = fromSheet ? requested : fallback.defaultRange;
+  if (defaultRange === 'custom' && !(rangeStart && rangeEnd)) defaultRange = 'last12months';
+
   return {
-    defaultRange: isValidPresetId(defaultRange) ? defaultRange : fallback.defaultRange,
-    defaultRangeStart: String(raw.defaultrangestart ?? '').trim(),
-    defaultRangeEnd: String(raw.defaultrangeend ?? '').trim(),
+    defaultRange,
+    defaultRangeStart: defaultRange === 'custom' ? rangeStart : '',
+    defaultRangeEnd: defaultRange === 'custom' ? rangeEnd : '',
     calendarIds: splitIds(raw.calendarids ?? raw.calendarid ?? raw.calendars ?? fallback.calendarIds),
     countMode: countMode === 'all' || countMode === 'every' ? 'all' : 'first',
     weekStart: weekStart === 'sunday' ? 'sunday' : 'monday',

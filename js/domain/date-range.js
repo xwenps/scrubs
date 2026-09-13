@@ -128,6 +128,20 @@ export function isValidPresetId(id) {
 }
 
 /**
+ * The descriptor for a settings object's default view. `custom` carries its two
+ * dates with it — a bare `{ preset: 'custom' }` has no bounds to resolve, so it
+ * would silently land on "the last month" instead of the configured range.
+ * @param {{defaultRange?: string, defaultRangeStart?: string, defaultRangeEnd?: string}} settings
+ */
+export function defaultDescriptor(settings = {}) {
+  const preset = settings.defaultRange;
+  if (preset === 'custom') {
+    return { preset: 'custom', start: settings.defaultRangeStart, end: settings.defaultRangeEnd };
+  }
+  return { preset };
+}
+
+/**
  * Resolve a range descriptor into concrete bounds.
  * @param {{preset: string, start?: string, end?: string}} descriptor
  * @returns {{preset: string, start: Date, end: Date, label: string, startISO: string, endISO: string}}
