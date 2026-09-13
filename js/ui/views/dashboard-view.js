@@ -37,7 +37,6 @@ export async function renderDashboardView(mount) {
   const rangePicker = createDateRangePicker({
     value: { preset: state.range?.preset || 'last12months', start: state.range?.startISO, end: state.range?.endISO },
     options: state.settings || {},
-    isDefault: state.range?.preset === state.settings?.defaultRange,
     onChange: (resolved) => setRange(resolved),
     onSetDefault: async (descriptor) => {
       try {
@@ -46,7 +45,6 @@ export async function renderDashboardView(mount) {
           start: descriptor.start,
           end: descriptor.end,
         });
-        rangePicker.setDefaultFlag(true);
         notify.success(
           'Default view updated',
           savedToSheet ? 'Saved to your configuration sheet.' : 'Saved in this browser — no writable config sheet is connected.',
@@ -96,6 +94,13 @@ export async function renderDashboardView(mount) {
     const { range, settings, rules, events, eventsStatus } = current;
     if (!range) return;
 
+    // Keep the picker's own state in sync — it's created once, outside this
+    // function, so it wouldn't otherwise notice the range or the default
+    // changing (e.g. after "Make this my default view", or a picker-external
+    // range change).
+    rangePicker.setValue({ preset: range.preset, start: range.startISO, end: range.endISO });
+    rangePicker.setOptions(settings || {});
+
     rangeSummary.textContent = `${fmtDate.range(range.start, range.end)} · ${range.label}`;
     renderBanner(banner, current);
 
@@ -144,7 +149,7 @@ export async function renderDashboardView(mount) {
     const summary = summarize(result, range);
     const nodes = [
       heroCard(summary, range),
-      statGrid(summary, result),
+      statGrid(summary),
       timeChartCard(result, range, settings, chartTeardowns),
       distributionRow(result, settings, chartTeardowns),
       heatmapCard(result, range, settings, chartTeardowns),
@@ -209,7 +214,7 @@ function heroCard(summary, range) {
   ]);
 }
 
-function statGrid(summary, result) {
+function statGrid(summary) {
   const tiles = [
     {
       label: 'Hours on the clock',
@@ -231,20 +236,6 @@ function statGrid(summary, result) {
       value: summary.busiestMonth.label,
       meta: plural(summary.busiestMonth.value, 'shift'),
     } : null,
-    summary.nextShift ? {
-      label: 'Next shift',
-      value: fmtDate.short(summary.nextShift.start),
-      meta: summary.nextShift.title || 'Untitled',
-    } : {
-      label: 'Last shift',
-      value: summary.lastShift ? fmtDate.short(summary.lastShift.start) : '—',
-      meta: summary.lastShift?.title || 'Nothing recorded',
-    },
-    {
-      label: 'Counters in play',
-      value: number(result.buckets.filter((bucket) => bucket.rule.enabled && bucket.total > 0).length),
-      meta: `${number(result.totals.unmatched)} events not counted`,
-    },
   ].filter(Boolean);
 
   return el('div.grid.grid--stats.section', {}, tiles.map((tile) => el('div.stat', {}, [
