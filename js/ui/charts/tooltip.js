@@ -55,7 +55,14 @@ export function hideTooltip() {
 /** Wire show/hide for a chart: pointer moves inside, and every exit path out. */
 export function bindTooltip(root, resolve) {
   const handleMove = (event) => {
-    const content = resolve(event);
+    // A touch drag's `target` stays pinned to whatever element the finger
+    // first landed on — it never retargets to whatever is under the finger
+    // now, unlike a mouse. Re-hit-test the live point instead, so scrubbing
+    // across bars/cells tracks the finger instead of freezing on the first
+    // one touched. `elementFromPoint` sees through the tooltip itself (it is
+    // `pointer-events: none`), so this is exactly what a mouse would report.
+    const target = document.elementFromPoint(event.clientX, event.clientY);
+    const content = target && resolve({ target, clientX: event.clientX, clientY: event.clientY });
     if (!content) {
       hideTooltip();
       root.classList.remove('is-hovering');
