@@ -81,7 +81,12 @@ export function renderColumnChart(container, data) {
     buckets.forEach((bucket, index) => {
       const x = padLeft + index * band + (band - barWidth) / 2;
       let cursor = padTop + plotHeight;
-      let isTopSegment = true;
+
+      // Segments are laid out bottom-up (this loop walks series indices high
+      // to low, starting at the baseline and stacking upward), so the rounded
+      // cap belongs to the LOWEST non-empty series index — that's the one the
+      // loop reaches last, which is the one that ends up visually on top.
+      const topSeriesIndex = series.findIndex((entry) => entry.values[index]);
 
       for (let s = series.length - 1; s >= 0; s -= 1) {
         const value = series[s].values[index];
@@ -91,6 +96,7 @@ export function renderColumnChart(container, data) {
         const y = cursor - rawHeight;
         // The gap is taken off the TOP of each lower segment, so it separates
         // this segment from the one above without shrinking the stack's base.
+        const isTopSegment = s === topSeriesIndex;
 
         const path = svgEl('path', {
           class: 'chart__mark',
@@ -103,7 +109,6 @@ export function renderColumnChart(container, data) {
         svg.append(path);
 
         cursor = y;
-        isTopSegment = false;
       }
 
       // Direct label on every non-empty column, space permitting.

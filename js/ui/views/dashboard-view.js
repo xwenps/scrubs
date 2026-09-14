@@ -168,7 +168,7 @@ export async function renderDashboardView(mount) {
 
     const summary = summarize(result, range);
     const nodes = [
-      heroCard(summary, range),
+      heroCard(summary, range, result),
       statGrid(summary),
       timeChartCard(result, range, settings, chartTeardowns),
       distributionRow(result, settings, chartTeardowns),
@@ -198,54 +198,60 @@ export async function renderDashboardView(mount) {
 /* Sections                                                                    */
 /* -------------------------------------------------------------------------- */
 
-function heroCard(summary, range) {
+function heroCard(summary, range, result) {
   const now = new Date();
   const rangeIsFuture = range.end > now;
 
+  // The counters that moved the most shifts, so the number at the top of the
+  // page is backed by which shift types actually made it up.
+  const topCounters = result.buckets
+    .filter((bucket) => bucket.rule.enabled && bucket.total > 0)
+    .sort((a, b) => b.total - a.total)
+    .slice(0, 4);
+
   return el('div.hero.dash__hero', {}, [
-    el('div.hero__figure', {}, [
-      el('p.hero__label', { text: 'Shifts counted' }),
-      el('p.hero__value', {}, [
-        number(summary.total),
-        el('span.hero__unit', { text: summary.total === 1 ? 'shift' : 'shifts' }),
-      ]),
-      el('p.hero__meta', {
-        text: summary.distinctDays === summary.total
-          ? `Across ${plural(summary.distinctDays, 'day')}`
-          : `Across ${plural(summary.distinctDays, 'day')} · ${decimal(summary.perWeek, 1)} per week`,
-      }),
-    ]),
-    el('div.hero__split', {}, [
-      el('div.hero__split-item', {}, [
-        el('p.hero__split-label', {}, [
-          el('span.swatch', { style: { '--swatch': 'var(--ink-2)' } }),
-          'Worked',
+    el('div.hero__top', {}, [
+      el('div.hero__figure', {}, [
+        el('p.hero__label', { text: 'Shifts counted' }),
+        el('p.hero__value', {}, [
+          number(summary.total),
+          el('span.hero__unit', { text: summary.total === 1 ? 'shift' : 'shifts' }),
         ]),
-        el('p.hero__split-value', { text: number(summary.past) }),
+        el('p.hero__meta', {
+          text: summary.distinctDays === summary.total
+            ? `Across ${plural(summary.distinctDays, 'day')}`
+            : `Across ${plural(summary.distinctDays, 'day')} · ${decimal(summary.perWeek, 1)} per week`,
+        }),
       ]),
-      rangeIsFuture ? el('div.hero__split-item', {}, [
-        el('p.hero__split-label', {}, [
-          el('span.swatch', { style: { '--swatch': 'var(--ink-3)', opacity: '0.5' } }),
-          'Scheduled',
+      el('div.hero__split', {}, [
+        el('div.hero__split-item', {}, [
+          el('p.hero__split-label', {}, [
+            el('span.swatch', { style: { '--swatch': 'var(--ink-2)' } }),
+            'Worked',
+          ]),
+          el('p.hero__split-value', { text: number(summary.past) }),
         ]),
-        el('p.hero__split-value', { text: number(summary.future) }),
-      ]) : null,
+        rangeIsFuture ? el('div.hero__split-item', {}, [
+          el('p.hero__split-label', {}, [
+            el('span.swatch', { style: { '--swatch': 'var(--ink-3)', opacity: '0.5' } }),
+            'Scheduled',
+          ]),
+          el('p.hero__split-value', { text: number(summary.future) }),
+        ]) : null,
+      ]),
     ]),
+    topCounters.length ? el('div.hero__counters', {}, topCounters.map((bucket) => el('div.hero__split-item', {}, [
+      el('p.hero__split-label', {}, [
+        el('span.swatch', { style: { '--swatch': seriesColor(bucket.rule.color) } }),
+        el('span.truncate', { text: bucket.rule.label, title: bucket.rule.label }),
+      ]),
+      el('p.hero__split-value', { text: number(bucket.total) }),
+    ]))) : null,
   ]);
 }
 
 function statGrid(summary) {
   const tiles = [
-    {
-      label: 'Hours on the clock',
-      value: fmtHours(summary.hours),
-      meta: summary.avgHours ? `${fmtHours(summary.avgHours)} average shift` : 'All-day events count as 0h',
-    },
-    {
-      label: 'Shifts per week',
-      value: decimal(summary.perWeek, 1),
-      meta: `Over ${plural(Math.round(summary.elapsedDays / 7), 'week')} elapsed`,
-    },
     {
       label: 'Longest run',
       value: number(summary.longestStreak),
