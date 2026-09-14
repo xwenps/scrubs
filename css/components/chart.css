@@ -1,8 +1,21 @@
 .chart {
   position: relative;
   width: 100%;
+  /* Bars are hovered/scrubbed with a horizontal touch drag, so that axis is
+     claimed for the app; vertical panning is left alone so the page still
+     scrolls normally when a finger passes over the chart. Without this, iOS
+     spends the first touch-move deciding between "scroll" and "select text",
+     which is also what pops the magnifier loupe below. */
+  touch-action: pan-y;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
 }
 .chart svg { width: 100%; height: auto; display: block; overflow: visible; }
+
+/* The heatmap grid scrolls horizontally by design (see `.heatmap` below), so
+   it needs the opposite axis reserved for the browser's own panning. */
+.heatmap.chart { touch-action: pan-x; }
 
 .chart__grid-line { stroke: var(--grid); stroke-width: 1; shape-rendering: crispEdges; }
 .chart__axis-line { stroke: var(--axis); stroke-width: 1; shape-rendering: crispEdges; }

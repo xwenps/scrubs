@@ -71,12 +71,17 @@ export function bindTooltip(root, resolve) {
     root.querySelectorAll('.is-active').forEach((mark) => mark.classList.remove('is-active'));
   };
 
+  // `pointerdown` matters for touch: a tap that doesn't drag can fire no
+  // `pointermove` at all, which would otherwise leave a stationary finger
+  // with no feedback until it moves.
+  root.addEventListener('pointerdown', handleMove);
   root.addEventListener('pointermove', handleMove);
   root.addEventListener('pointerleave', handleLeave);
   root.addEventListener('pointercancel', handleLeave);
   window.addEventListener('scroll', hideTooltip, { passive: true });
 
   return () => {
+    root.removeEventListener('pointerdown', handleMove);
     root.removeEventListener('pointermove', handleMove);
     root.removeEventListener('pointerleave', handleLeave);
     root.removeEventListener('pointercancel', handleLeave);
