@@ -7,6 +7,7 @@ import { store } from './core/store.js';
 import { auth } from './services/auth.js';
 import { applyTheme, getTheme, createThemeToggle } from './ui/components/theme-toggle.js';
 import { notify } from './ui/components/toast.js';
+import { hideBootOverlay } from './ui/components/boot-overlay.js';
 import { renderLoginView } from './ui/views/login-view.js';
 import { renderDashboardView } from './ui/views/dashboard-view.js';
 import { renderRulesView } from './ui/views/rules-view.js';
@@ -14,7 +15,6 @@ import { initializeSession, signOut, loadEvents, sheetUrl } from './app-state.js
 
 const main = qs('#main');
 const appBar = qs('#app-bar');
-const boot = qs('#app-boot');
 
 applyTheme(getTheme());
 qs('#theme-toggle-slot').append(createThemeToggle());
@@ -137,7 +137,7 @@ router
     store.patch({ status: 'signed-out' });
   }
 
-  boot.remove();
+  hideBootOverlay();
   router.start();
 
   // Re-entering the tab after the token's hour is up should not strand the user

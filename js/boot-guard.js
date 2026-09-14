@@ -90,7 +90,7 @@
 
   // Loaded but never finished — usually a runtime error during boot.
   window.setTimeout(function () {
-    if (!document.body.contains(panel)) return;
+    if (panel.hidden) return;
     fail('Scrubs is taking longer than expected to start', [
       '<p style="margin:0 0 12px">The application loaded but has not finished starting. ',
       'The browser console usually says why.</p>',
@@ -100,6 +100,7 @@
     ].join(''));
   }, BOOT_TIMEOUT_MS);
 
-  // main.js removes the loading panel once it is running; that also cancels the
-  // watchdog above, since it checks whether the panel is still in the document.
+  // main.js hides the loading panel once it is running (rather than removing
+  // it — the same panel is reused later, as a post-sign-in loader), which is
+  // what cancels the watchdog above.
 }());

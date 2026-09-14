@@ -12,6 +12,7 @@ import { looksLikeSpreadsheetId, extractSpreadsheetId } from '../../services/she
 import { currentSpreadsheetId, setSpreadsheetOverride, sheetUrl, initializeSession } from '../../app-state.js';
 import { router } from '../../core/router.js';
 import { notify } from '../components/toast.js';
+import { showBootOverlay, hideBootOverlay } from '../components/boot-overlay.js';
 import { local, KEYS } from '../../core/storage.js';
 
 export async function renderLoginView(mount) {
@@ -101,12 +102,20 @@ export async function renderLoginView(mount) {
     try {
       const token = await auth.signInInteractive();
       if (!token) return; // the user closed the popup, or a newer request superseded this one
+
+      // The Google popup is closed, but the dashboard still needs its config
+      // sheet, calendar list and first batch of events — swap to the same
+      // full-screen loader used on first boot instead of leaving this page
+      // (marketing copy, config drawer, and a now-blank sign-in button) up
+      // for however long that takes.
+      showBootOverlay('Loading your calendar…');
       await initializeSession();
       router.navigate('dashboard', { replace: true });
     } catch (error) {
       notify.error('Sign-in failed', error.message);
     } finally {
       signInButton.classList.remove('is-busy');
+      hideBootOverlay();
     }
   });
 
